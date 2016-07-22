@@ -1,11 +1,25 @@
 version: 1.0.{build}
+
+os: Visual Studio 2015
+
+environment:
+  matrix:
+  - Toolset: v140
+  - Toolset: v120
+  - Toolset: v110
+  - Toolset: v100
+
+platform:
+  - Win32
+  - x64
+  
 branches:
   #whitelist
   only:
     - master
     - Version3-Development
     - Test
-image: Visual Studio 2012
+      
 clone_depth: 1
 skip_tags: true
 clone_folder: c:\projects\openigtlink
@@ -16,6 +30,7 @@ matrix:
       configuration: Debug
     - platform: Any CPU
       configuration: Release
+      
 before_build:
   - cmd: mkdir build
   - cmd: cd build
