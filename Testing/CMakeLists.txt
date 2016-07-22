@@ -18,7 +18,7 @@ endif()
 # Download and unpack googletest at configure time
 configure_file(CMakeLists.txt.in
 							 googletest-download/CMakeLists.txt)
-execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" . 
+execute_process(COMMAND "${CMAKE_COMMAND}" -D_VARIADIC_MAX=10 -G "${CMAKE_GENERATOR}" . 
 	WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/googletest-download" )
 
 execute_process(COMMAND "${CMAKE_COMMAND}" --build . 
