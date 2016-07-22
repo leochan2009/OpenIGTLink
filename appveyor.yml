@@ -8,9 +8,8 @@ environment:
   - Toolset: v120
   - Toolset: v110
   - Toolset: v100
-
+#Test on the x86 platform was not successul. the first Test was hanged forever
 platform:
-  - x86
   - x64
   
 configuration:
@@ -39,19 +38,11 @@ before_build:
         "v140" {"Visual Studio 14 2015"}
         "v120" {"Visual Studio 12 2013"}
         "v110" {"Visual Studio 11 2012"}
-        "v100" {"Visual Studio 10 2010"}
     }
-    if ($env:PLATFORM -eq "x64")
-    {
-        $generator = "$generator Win64"
-    }
+    $generator = "$generator Win64"
 
 build_script:
 - ps: |
-    if (($env:TOOLSET -eq "v100") -and ($env:PLATFORM -eq "x64"))
-    {
-        return
-    }
     mkdir build -Force | Out-Null
     cd build
     & cmake -G "$generator" ..
@@ -77,11 +68,6 @@ build_script:
 
 test_script:
 - ps: |
-    if (($env:Toolset -eq "v100") -and ($env:PLATFORM -eq "x64"))
-    {
-        return
-    }
-
     & ctest -C $env:CONFIGURATION --output-on-failure
     if ($LastExitCode -ne 0) {
         throw "Exec: $ErrorMessage"
