@@ -13,6 +13,9 @@ platform:
   - Win32
   - x64
   
+configuration:
+  - Debug  
+  
 branches:
   #whitelist
   only:
@@ -23,13 +26,6 @@ branches:
 clone_depth: 1
 skip_tags: true
 clone_folder: c:\projects\openigtlink
-matrix:
-  fast_finish: true     # set this flag to immediately finish build once one of the jobs fails.
-  allow_failures:
-    - platform: Any CPU
-      configuration: Debug
-    - platform: Any CPU
-      configuration: Release
       
 before_build:
   - cmd: mkdir build
