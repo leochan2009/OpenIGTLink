@@ -62,15 +62,11 @@ build_script:
     if ($LastExitCode -ne 0) {
         throw "Exec: $ErrorMessage"
     }
-    if (($env:TOOLSET -eq "v100") -and ($env:PLATFORM -eq "x64"))
-    {
-        return
-    }
     mkdir build -Force | Out-Null
     cd ..
     mkdir TestBuild
     cd TestBuild
-    & cmake -G "$generator" ..
+    & cmake -G "$generator" ..\Testing
     if ($LastExitCode -ne 0) {
         throw "Exec: $ErrorMessage"
     }
