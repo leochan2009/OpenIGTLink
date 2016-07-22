@@ -6,6 +6,7 @@ set(CMAKE_PREFIX_PATH "${CMAKE_BINARY_DIR}/../build")
 find_package(OpenIGTLink REQUIRED)
 include(${OpenIGTLink_USE_FILE})
 include_directories(${OpenIGTLink_INCLUDE_DIRS})
+include_directories(${CMAKE_BINARY_DIR})
 link_directories(${OpenIGTLink_LIBRARY_DIRS})
 ENABLE_TESTING()
 ADD_SUBDIRECTORY( igtlutil )
@@ -21,7 +22,7 @@ CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/igtlTestConfig.h.in
   
 configure_file(CMakeLists.txt.in
 							 googletest-download/CMakeLists.txt)
-execute_process(COMMAND "${CMAKE_COMMAND}" -D_VARIADIC_MAX=10 -G "${CMAKE_GENERATOR}" . 
+execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" . 
 	WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/googletest-download" )
 
 execute_process(COMMAND "${CMAKE_COMMAND}" --build . 
