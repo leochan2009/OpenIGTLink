@@ -40,9 +40,6 @@ endif(NOT OpenIGTLink_BUILD_SHARED_LIBS)
 OPTION(BUILD_EXAMPLES "Build OpenIGTLink example programs." OFF)
 SET(OpenIGTLink_BUILD_EXAMPLES ${BUILD_EXAMPLES})
 
-OPTION(BUILD_TESTING "Build the testing tree." ON)
-SET(OpenIGTLink_BUILD_TESTING ${BUILD_TESTING})
-
 #-----------------------------------------------------------------------------
 # Output directories.
 
