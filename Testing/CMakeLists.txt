@@ -16,6 +16,9 @@ if( MSVC ) # VS2012 doesn't support correctly the tuples yet
 endif()
 
 # Download and unpack googletest at configure time
+CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/igtlTestConfig.h.in
+  ${CMAKE_BINARY_DIR}/igtlTestConfig.h)
+  
 configure_file(CMakeLists.txt.in
 							 googletest-download/CMakeLists.txt)
 execute_process(COMMAND "${CMAKE_COMMAND}" -D_VARIADIC_MAX=10 -G "${CMAKE_GENERATOR}" . 
