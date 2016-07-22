@@ -1,13 +1,20 @@
-version: 0.0.{build}
-os:
-  - Visual Studio 2012
+version: 1.0.{build}
+branches:
+  #whitelist
+  only:
+    - master
+    - Version3-Development
+image: Visual Studio 2012
 clone_depth: 1
 skip_tags: true
 clone_folder: c:\projects\openigtlink
-configuration:
-  - Release
-platform:
-  - x64
+matrix:
+  fast_finish: true     # set this flag to immediately finish build once one of the jobs fails.
+  allow_failures:
+    - platform: Any CPU
+      configuration: Debug
+    - platform: Any CPU
+      configuration: Release
 before_build:
   - cmd: mkdir build
   - cmd: cd build
