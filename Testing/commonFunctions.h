@@ -1,6 +1,6 @@
 #include <sys/time.h>
 #include <time.h>
-
+#include <vector>
 #define NO_DELAY_DECODING
 
 void Write2File (FILE* pFp, unsigned char* pData[3], int iStride[2], int iWidth, int iHeight) {
@@ -213,7 +213,19 @@ void H264DecodeInstance (ISVCDecoder* pDecoder, unsigned char* kpH264BitStream, 
       Process ((void**)pDst, &sDstBufInfo, pYuvFile);
       iWidth  = sDstBufInfo.UsrData.sSystemBuffer.iWidth;
       iHeight = sDstBufInfo.UsrData.sSystemBuffer.iHeight;
-      
+      std::vector<unsigned char> test(iWidth*iHeight*3/2,0);
+      for (int i =0; i< test.size()*2/3; i++)
+      {
+        test[i] = pDst[0][i];
+      }
+      for (int i =0; i< test.size()/6; i++)
+      {
+        test[i+test.size()*2/3] = pDst[1][i];
+      }
+      for (int i =0; i< test.size()/6; i++)
+      {
+        test[i+test.size()*5/6] = pDst[2][i];
+      }
       if (pOptionFile != NULL) {
         if (iWidth != iLastWidth && iHeight != iLastHeight) {
           fwrite (&iFrameCount, sizeof (iFrameCount), 1, pOptionFile);

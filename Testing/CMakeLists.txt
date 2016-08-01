@@ -45,6 +45,7 @@ LINK_DIRECTORIES("${CMAKE_BINARY_DIR}/Testing/OpenH264")
 
 ADD_EXECUTABLE(VideoDataClient   VideoDataClient.cxx)
 ADD_EXECUTABLE(VideoDataServer   VideoDataServer.cxx)
+ADD_EXECUTABLE(PolyCompressedDataClient    PolyCompressedDataClient.cxx)
 
 ADD_EXECUTABLE(igtlSocketTest   igtlSocketTest.cxx)
 ADD_EXECUTABLE(igtlMultiThreaderTest1   igtlMultiThreaderTest1.cxx)
@@ -104,6 +105,8 @@ TARGET_LINK_LIBRARIES(igtlTrajectoryMessageTest OpenIGTLink gtest_main gtest gmo
 TARGET_LINK_LIBRARIES(igtlTransformMessageTest OpenIGTLink gtest_main gtest gmock_main gmock)
 TARGET_LINK_LIBRARIES(VideoDataClient OpenIGTLink openH264)
 TARGET_LINK_LIBRARIES(VideoDataServer OpenIGTLink openH264)
+TARGET_LINK_LIBRARIES(PolyCompressedDataClient OpenIGTLink openH264)
+
 
 ADD_TEST(igtlSocketTest ${OpenIGTLink_EXECUTABLE_PATH}/igtlSocketTest)
 ADD_TEST(igtlMultiThreaderTest1 ${OpenIGTLink_EXECUTABLE_PATH}/igtlMultiThreaderTest1)
