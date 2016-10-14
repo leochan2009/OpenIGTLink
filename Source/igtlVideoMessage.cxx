@@ -34,7 +34,7 @@ int StartVideoDataMessage::PackBody()
   AllocatePack();
   
   igtl_stt_video* stt_video = (igtl_stt_video*)this->m_Body;
-  
+  strncpy(stt_video->codec, this->m_CodecType, IGTL_VIDEO_CODEC_NAME_SIZE);
   stt_video->time_interval = this->m_TimeInterval;
   stt_video->useCompress = this->m_UseCompress;
   
@@ -53,6 +53,7 @@ int StartVideoDataMessage::UnpackBody()
   
   this->m_TimeInterval = stt_video->time_interval;
   this->m_UseCompress = stt_video->useCompress;
+  strncpy(this->m_CodecType, stt_video->codec, IGTL_VIDEO_CODEC_NAME_SIZE);
   return 1;
 }
 
@@ -63,7 +64,6 @@ VideoMessage::VideoMessage():
 {
   endian        = ENDIAN_BIG;
   scalarType    = TYPE_UINT8;
-  strncpy(codec, "H264",IGTL_VIDEO_CODEC_NAME_SIZE);
   m_FrameHeader = NULL;
   m_Frame       = NULL;
 
@@ -189,9 +189,6 @@ int VideoMessage::PackBody()
   frame_header->endian            = this->endian;
   frame_header->width             = this->width;
   frame_header->height            = this->height;
-  strncpy(frame_header->codec, this->codec, IGTL_VIDEO_CODEC_NAME_SIZE);
-  for (int i = 0; i<56; i++)
-    frame_header->researved[i] = 0;
   igtl_frame_convert_byte_order(frame_header);
 
   return 1;
@@ -222,7 +219,6 @@ int VideoMessage::UnpackBody()
       this->endian           = frame_header->endian;
       this->width            = frame_header->width;
       this->height           = frame_header->height;
-      strncpy(this->codec, frame_header->codec, IGTL_VIDEO_CODEC_NAME_SIZE);
       this->m_Frame = this->m_FrameHeader;
       this->m_Frame += IGTL_VIDEO_HEADER_SIZE;
       

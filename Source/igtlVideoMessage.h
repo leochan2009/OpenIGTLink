@@ -48,8 +48,16 @@ public:
   void    SetUseCompress(bool useCompress) { this->m_UseCompress = useCompress; };
   igtlInt32    GetUseCompress()               { return this->m_UseCompress; };
   
+  void    SetCodecType(const char codecType[]) { strncpy(this->m_CodecType, codecType, IGTL_VIDEO_CODEC_NAME_SIZE); }
+                                                        
+  std::string    GetCodecType()               { return this->m_CodecType; };
+  
 protected:
-  StartVideoDataMessage() : MessageBase() { this->m_DefaultBodyType  = "STT_VIDEO"; };
+  StartVideoDataMessage() : MessageBase()
+  {
+    this->m_DefaultBodyType  = "STT_VIDEO";
+    strncpy(this->m_CodecType, "H264",IGTL_VIDEO_CODEC_NAME_SIZE);
+  };
   ~StartVideoDataMessage();
   
 protected:
@@ -59,6 +67,9 @@ protected:
   
 protected:
   
+  /// codec is define here, "H264" is the default
+  /// A variable for codec protocal
+  char   m_CodecType[IGTL_VIDEO_CODEC_NAME_SIZE];
   /// Minimum time between two frames (ms). Use 0 for as fast as possible.
   igtlInt32     m_TimeInterval;
   bool m_UseCompress;
@@ -266,9 +277,6 @@ public:
   
   /// A variable for the allocate the message body
   int    bitStreamSize;
-  
-  /// A variable for codec protocal
-  char   codec[IGTL_VIDEO_CODEC_NAME_SIZE];
   
   /// A pointer to the serialized image header.
   unsigned char*  m_FrameHeader;
