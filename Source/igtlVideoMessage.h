@@ -211,7 +211,7 @@ public:
   // TODO: Should returned value be 64-bit integer?
   int  GetBitStreamSize()
   {
-    return bitStreamSize;
+    return GetPackBodySize()-IGTL_VIDEO_HEADER_SIZE;
   };
   
   void SetBitStreamSize(int size)
