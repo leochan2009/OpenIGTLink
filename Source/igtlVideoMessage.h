@@ -15,6 +15,8 @@
 #ifndef __igtlVideoMessage_h
 #define __igtlVideoMessage_h
 
+#include <string>
+
 #include "igtlObject.h"
 #include "igtlMacro.h"
 #include "igtlMath.h"
@@ -46,9 +48,10 @@ public:
   igtlInt32    GetTimeInterval()               { return this->m_TimeInterval; };
   
   void    SetUseCompress(bool useCompress) { this->m_UseCompress = useCompress; };
+  
   igtlInt32    GetUseCompress()               { return this->m_UseCompress; };
   
-  void    SetCodecType(const char codecType[]) { strncpy(this->m_CodecType, codecType, IGTL_VIDEO_CODEC_NAME_SIZE); }
+  void    SetCodecType(const char codecType[]){ this->m_CodecType = std::string(codecType); };
                                                         
   std::string    GetCodecType()               { return this->m_CodecType; };
   
@@ -56,7 +59,7 @@ protected:
   StartVideoDataMessage() : MessageBase()
   {
     this->m_DefaultBodyType  = "STT_VIDEO";
-    strncpy(this->m_CodecType, "H264",IGTL_VIDEO_CODEC_NAME_SIZE);
+    this->m_CodecType = "H264";
   };
   ~StartVideoDataMessage();
   
@@ -69,7 +72,7 @@ protected:
   
   /// codec is define here, "H264" is the default
   /// A variable for codec protocal
-  char   m_CodecType[IGTL_VIDEO_CODEC_NAME_SIZE];
+  std::string   m_CodecType;
   /// Minimum time between two frames (ms). Use 0 for as fast as possible.
   igtlInt32     m_TimeInterval;
   bool m_UseCompress;

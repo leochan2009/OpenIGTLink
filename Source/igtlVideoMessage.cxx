@@ -14,7 +14,7 @@
 
 #include "igtlVideoMessage.h"
 
-#include <cstring>
+#include <string.h>
 
 namespace igtl {
 
@@ -28,13 +28,12 @@ int StartVideoDataMessage::GetBodyPackSize()
   return IGTL_STT_VIDEO_SIZE;
 }
 
-
 int StartVideoDataMessage::PackBody()
 {
   AllocatePack();
   
   igtl_stt_video* stt_video = (igtl_stt_video*)this->m_Body;
-  strncpy(stt_video->codec, this->m_CodecType, IGTL_VIDEO_CODEC_NAME_SIZE);
+  strncpy(stt_video->codec, this->m_CodecType.c_str(), IGTL_VIDEO_CODEC_NAME_SIZE);
   stt_video->time_interval = this->m_TimeInterval;
   stt_video->useCompress = this->m_UseCompress;
   
@@ -53,7 +52,7 @@ int StartVideoDataMessage::UnpackBody()
   
   this->m_TimeInterval = stt_video->time_interval;
   this->m_UseCompress = stt_video->useCompress;
-  strncpy(this->m_CodecType, stt_video->codec, IGTL_VIDEO_CODEC_NAME_SIZE);
+  this->m_CodecType = std::string(stt_video->codec);
   return 1;
 }
 
