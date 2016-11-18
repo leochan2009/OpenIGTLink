@@ -67,6 +67,7 @@ SET(OpenIGTLink_SOURCES
   igtlSessionManager.cxx
   igtlSimpleFastMutexLock.cxx
   igtlSocket.cxx
+  igtlGeneralSocket.cxx
   igtlStatusMessage.cxx
   igtlTimeStamp.cxx
   igtlTransformMessage.cxx
@@ -108,6 +109,7 @@ SET(OpenIGTLink_INCLUDE_FILES
   igtlSimpleFastMutexLock.h
   igtlSmartPointer.h
   igtlSocket.h
+  igtlGeneralSocket.h
   igtlStatusMessage.h
   igtlTimeStamp.h
   igtlTransformMessage.h
