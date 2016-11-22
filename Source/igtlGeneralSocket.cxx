@@ -27,21 +27,6 @@
  =========================================================================*/
 
 #include "igtlGeneralSocket.h"
-
-#if defined(_WIN32) && !defined(__CYGWIN__)
-#include <windows.h>
-#include <winsock2.h>
-#else
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <unistd.h>
-#include <sys/time.h>
-#endif
-
 #include <string.h>
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -137,7 +122,6 @@ namespace igtl
       CloseSocket(sock);
       return -1;
     }
-    
     return sock;
   }
   
@@ -488,7 +472,13 @@ namespace igtl
                    (const char*)&ttl, sizeof ttl) < 0) {
       return 0;
     }
-    MAKE_SOCKADDR_IN(dest, address.s_addr, this->PortNum);
+    
+    struct sockaddr_in dest;
+    //dest.sin_family = AF_INET;
+    //dest.sin_addr.s_addr = (address.s_addr);
+    //dest.sin_port = (this->PortNum);
+    //dest.sin_len = sizeof dest;
+    
     int n = sendto(this->m_SocketDescriptor, (char*)data, length, 0, (struct sockaddr*)&dest, sizeof dest);
     if(n < 0)
     {
@@ -513,8 +503,9 @@ namespace igtl
 #if defined(_WIN32) && !defined(__CYGWIN__)
       int trys = 0;
 #endif
-      
-      int n = recv(this->m_SocketDescriptor, buffer+total, length-total, 0);
+      struct sockaddr dest;
+      socklen_t addressLen = sizeof dest;
+      int n = recvfrom(this->m_SocketDescriptor, (void*)(buffer+total), length-total, 0, &dest, &addressLen);
       
 #if defined(_WIN32) && !defined(__CYGWIN__)
       if(n == 0)
@@ -549,7 +540,7 @@ namespace igtl
 #endif
       
       total += n;
-    } while(readFully && total < length);
+    } while(total < length);
     return total;
   }
 

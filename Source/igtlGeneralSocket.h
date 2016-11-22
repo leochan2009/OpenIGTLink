@@ -45,12 +45,19 @@
 #include "igtlMacro.h"
 #include "igtlWin32Header.h"
 
-
 #if defined(_WIN32) && !defined(__CYGWIN__)
+#include <windows.h>
+#include <winsock2.h>
 #else
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <unistd.h>
 #include <sys/time.h>
 #endif
-
 
 namespace igtl
 {
