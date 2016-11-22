@@ -27,6 +27,7 @@
 #include "igtlTrackingDataMessage.h"
 #include "igtlQuaternionTrackingDataMessage.h"
 #include "igtlCapabilityMessage.h"
+#include "igtlVideoMessage.h"
 #endif // OpenIGTLink_PROTOCOL_VERSION >= 2
 
 #include <stdexcept>
@@ -51,6 +52,7 @@ MessageFactory::MessageFactory()
   m_DeviceTypes.insert("TDATA");
   m_DeviceTypes.insert("QTDATA");
   m_DeviceTypes.insert("CAPABILITY");
+  m_DeviceTypes.insert("VIDEO");
 #endif //OpenIGTLink_PROTOCOL_VERSION >= 2
 }
 
@@ -133,6 +135,10 @@ igtl::MessageBase::Pointer MessageFactory::GetMessage(igtl::MessageHeader::Point
   else if (strcmp(headerMsg->GetDeviceType(), "CAPABILITY") == 0)
   {
     result = igtl::CapabilityMessage::New();
+  }
+  else if (strcmp(headerMsg->GetDeviceType(), "VIDEO") == 0)
+  {
+    result = igtl::VideoMessage::New();
   }
 #endif //OpenIGTLink_PROTOCOL_VERSION >= 2
 

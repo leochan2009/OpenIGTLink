@@ -110,7 +110,6 @@ int StringMessage::PackBody()
 
 int StringMessage::UnpackBody()
 {
-
   igtl_string_header * string_header;
   char * string;
 
