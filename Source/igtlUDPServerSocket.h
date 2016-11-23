@@ -37,6 +37,7 @@
 #include "igtlGeneralSocket.h"
 #include "igtlUDPClientSocket.h"
 #include "igtlWin32Header.h"
+#include "igtl_header.h"
 
 
 namespace igtl
@@ -69,7 +70,7 @@ public:
   // Description:
   // Add a client socket with given address at a given port and binds to it.
   // Returns -1 on error. return clientID on success.
-  int AddClient(struct in_addr add, u_int16_t port, unsigned int clientID);
+  int AddClient(struct in_addr add, igtl_uint16 port, unsigned int clientID);
   
   // Description:
   // Add a client socket with given address at a given port and binds to it.

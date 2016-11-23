@@ -44,6 +44,7 @@
 #include "igtlObjectFactory.h"
 #include "igtlMacro.h"
 #include "igtlWin32Header.h"
+#include "igtl_types.h"
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #include <windows.h>

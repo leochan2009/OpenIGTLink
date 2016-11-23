@@ -40,7 +40,7 @@ UDPServerSocket::~UDPServerSocket()
 {
 }
   
-int UDPServerSocket::AddClient(struct in_addr add, u_int16_t port, unsigned int clientID)
+int UDPServerSocket::AddClient(struct in_addr add, igtl_uint16 port, unsigned int clientID)
 {
   for(int i = 0; this->clients.size(); i++)
   {
@@ -90,8 +90,7 @@ int UDPServerSocket::CreateUDPServer(int port)
   {
     return -1;
   }
-  if ( this->BindSocket(this->m_SocketDescriptor, port) != 0||
-      this->Listen(this->m_SocketDescriptor) != 0)
+  if ( this->BindSocket(this->m_SocketDescriptor, port) != 0)
   {
     // failed to bind or listen.
     this->CloseSocket(this->m_SocketDescriptor);

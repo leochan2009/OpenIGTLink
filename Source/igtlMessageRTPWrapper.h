@@ -32,7 +32,7 @@
 #endif
 
 #define RTP_HEADER_LENGTH 12
-#define RTP_PAYLOAD_LENGTH 1456 //maximum 1500, minus 12 byte RTP and 32 byte IP address
+#define RTP_PAYLOAD_LENGTH 200 //maximum 1500, minus 12 byte RTP and 32 byte IP address
 #define MinimumPaketSpace RTP_PAYLOAD_LENGTH/3
 
 
@@ -43,25 +43,30 @@ class IGTLCommon_EXPORT MessageRTPWrapper: public Object
 {
 public:
   typedef MessageRTPWrapper              Self;
-  typedef MessageBase               Superclass;
+  typedef Object               Superclass;
   typedef SmartPointer<Self>        Pointer;
   typedef SmartPointer<const Self>  ConstPointer;
 
-  igtlTypeMacro(igtl::MessageRTPWrapper, igtl::MessageBase)
+  igtlTypeMacro(igtl::MessageRTPWrapper, Object)
   igtlNewMacro(igtl::MessageRTPWrapper);
 
 public:
-  
-  virtual void  AllocateScalars();
+  enum PaketStatus
+  {
+    PaketReady,
+    WaitingForAnotherMSG,
+    WaitingForFragment
+  };
+  //virtual void  AllocateScalars();
 
   /// Gets a pointer to the scalar data.
-  virtual void* GetScalarPointer();
+  //virtual void* GetScalarPointer();
 
   /// Sets the pointer to the scalar data (for fragmented pack support).
-  virtual void  SetScalarPointer(unsigned char * p);
+  //virtual void  SetScalarPointer(unsigned char * p);
 
   /// Gets a pointer to the scalar data (for fragmented pack support).
-  void* GetPackPointer();
+  igtl_uint8* GetPackPointer(){return packedMsg;};
 
   /// Gets the number of fragments for the packed (serialized) data. Returns numberOfDataFrag
   int GetNumberODataFragments() { return numberOfDataFrag;  /* the data for transmission is too big for UDP transmission, so the data will be transmitted by multiple packets*/ };
@@ -69,37 +74,29 @@ public:
   /// Gets the number of fragments to be sent for the packed (serialized) data. Returns numberOfDataFragToSent
   int GetNumberODataFragToSent() { return numberOfDataFragToSent;  /* the data for transmission is too big for UDP transmission, so the data will be transmitted by multiple packets*/ };
   
-  int WrapMessage(u_int8_t* header, int totMsgLen);
+  int WrapMessage(igtl_uint8* header, int totMsgLen);
   
   void SetPayLoadType(unsigned char type){RTPPayLoadType = type;};
   
   ///Set the synchronization source identifier
-  void SetSSRC(u_int32_t identifier);
+  void SetSSRC(igtl_uint32 identifier);
   
 protected:
   MessageRTPWrapper();
   ~MessageRTPWrapper();
   
 private:
-  u_int8_t* packedMsg;
+  igtl_uint8* packedMsg;
   int curFragLocation;
   unsigned int numberOfDataFrag;
   unsigned int numberOfDataFragToSent;
   unsigned char RTPPayLoadType;
-  u_int16_t AvailabeBytesNum;
-  u_int16_t SeqNum;
+  igtl_uint16 AvailabeBytesNum;
+  igtl_uint16 SeqNum;
   int status;
-  u_int32_t appSpecificFreq;
-  u_int32_t SSRC;
-  enum PaketStatus
-  {
-    PaketReady,
-    WaitingForAnotherMSG,
-    WaitingForFragment
-  };
-  
-  u_int32_t fragmentTimeIncrement;
-  unsigned int fragmentDuration;
+  igtl_uint32 appSpecificFreq;
+  igtl_uint32 SSRC;
+  igtl_uint32 fragmentTimeIncrement;
   
 };
 

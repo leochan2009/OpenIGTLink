@@ -67,7 +67,6 @@ SET(OpenIGTLink_SOURCES
   igtlSessionManager.cxx
   igtlSimpleFastMutexLock.cxx
   igtlSocket.cxx
-  igtlGeneralSocket.cxx
   igtlStatusMessage.cxx
   igtlTimeStamp.cxx
   igtlTransformMessage.cxx
@@ -109,7 +108,6 @@ SET(OpenIGTLink_INCLUDE_FILES
   igtlSimpleFastMutexLock.h
   igtlSmartPointer.h
   igtlSocket.h
-  igtlGeneralSocket.h
   igtlStatusMessage.h
   igtlTimeStamp.h
   igtlTransformMessage.h
@@ -151,6 +149,10 @@ IF (${OpenIGTLink_PROTOCOL_VERSION} GREATER "1" )
     igtlBindMessage.cxx
     igtlNDArrayMessage.cxx
     igtlVideoMessage.cxx
+    igtlMessageRTPWrapper.cxx
+    igtlGeneralSocket.cxx
+    igtlUDPClientSocket.cxx
+    igtlUDPServerSocket.cxx
     )
   SET(OpenIGTLink_INCLUDE_FILES
     ${OpenIGTLink_INCLUDE_FILES}
@@ -183,6 +185,10 @@ IF (${OpenIGTLink_PROTOCOL_VERSION} GREATER "1" )
     igtlBindMessage.h
     igtlNDArrayMessage.h
     igtlVideoMessage.h
+    igtlMessageRTPWrapper.h
+    igtlGeneralSocket.h
+    igtlUDPClientSocket.h
+    igtlUDPServerSocket.h
     )
 ENDIF ( ${OpenIGTLink_PROTOCOL_VERSION} GREATER "1")
 

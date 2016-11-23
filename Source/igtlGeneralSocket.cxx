@@ -107,21 +107,20 @@ namespace igtl
 #endif
     int sock = socket(AF_INET, SOCK_DGRAM, 0);
     
-    const u_int8_t loop = 0; //disable loop back to the host
+    const igtl_uint8 loop = 0; //disable loop back to the host
     if (setsockopt(sock, IPPROTO_IP, IP_MULTICAST_LOOP,
                    (const char*)&loop, sizeof loop) < 0) {
       CloseSocket(sock);
       return -1;
     }
-    
+    /*
     struct in_addr addr;
     addr.s_addr = INADDR_BROADCAST; // the address could be others
     
-    if (setsockopt(sock, IPPROTO_IP, IP_MULTICAST_IF,
-                   (const char*)&addr, sizeof addr) < 0) {
+    if (setsockopt(sock, IPPROTO_IP, IP_MULTICAST_IF, &addr, sizeof addr) < 0) {
       CloseSocket(sock);
       return -1;
-    }
+    }*/
     return sock;
   }
   
@@ -435,7 +434,6 @@ namespace igtl
       // nothing to send.
       return 1;
     }
-    const char* buffer = reinterpret_cast<const char*>(data);
     int flags;
 #if defined(_WIN32) && !defined(__CYGWIN__)
     flags = 0;
@@ -464,9 +462,9 @@ namespace igtl
 #if defined (_WIN32)
 #define TTL_TYPE int
 #else
-#define TTL_TYPE u_int8_t
+#define TTL_TYPE igtl_uint8
 #endif
-    u_int8_t ttlArg = 1; // 1 is the default value , valid value from 0 to 255
+    igtl_uint8 ttlArg = 255; // 1 is the default value , valid value from 0 to 255
     TTL_TYPE ttl = (TTL_TYPE)ttlArg;
     if (setsockopt(this->m_SocketDescriptor, IPPROTO_IP, IP_MULTICAST_TTL,
                    (const char*)&ttl, sizeof ttl) < 0) {

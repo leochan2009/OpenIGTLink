@@ -13,17 +13,18 @@
 =========================================================================*/
 
 #include "igtlMessageRTPWrapper.h"
+#include <string.h>
 
 namespace igtl {
   
-  MessageRTPWrapper::MessageRTPWrapper(){
+  MessageRTPWrapper::MessageRTPWrapper():Object(){
     this->SeqNum = 0;
     this->AvailabeBytesNum = RTP_PAYLOAD_LENGTH;
     this->numberOfDataFrag = 1;
     this->numberOfDataFragToSent = 1;
     this->packedMsg = NULL;
     this->appSpecificFreq = 100;
-    this->status = WaitingForAnotherMSG;
+    this->status = PaketReady;
     this->curFragLocation = 0;
   }
   
@@ -31,26 +32,26 @@ namespace igtl {
   {
   }
   
-  void MessageRTPWrapper::SetSSRC(u_int32_t identifier)
+  void MessageRTPWrapper::SetSSRC(igtl_uint32 identifier)
   {
     SSRC = identifier;
-    if(igtl_is_little_endian)
+    if(igtl_is_little_endian())
     {
       SSRC = BYTE_SWAP_INT32(SSRC);
     }
   }
   
-  int MessageRTPWrapper::WrapMessage(u_int8_t* header, int totMsgLen)
+  int MessageRTPWrapper::WrapMessage(igtl_uint8* header, int totMsgLen)
   {
     // Set up the RTP header:
-    u_int32_t rtpHdr = 0x80000000; // RTP version 2;
+    igtl_uint32 rtpHdr = 0x80000000; // RTP version 2;
     rtpHdr |= (RTPPayLoadType<<16);
     rtpHdr |= SeqNum; // sequence number, increment the sequence number after sending the data
     struct timeval timeNow;
     gettimeofday(&timeNow, NULL);
-    u_int32_t timeIncrement = (appSpecificFreq*timeNow.tv_sec); //need to check the frequency of different application
-    timeIncrement += u_int32_t(appSpecificFreq*(timeNow.tv_usec/1.0e6)+ 0.5);
-    //u_int32_t CSRC = 0x00000000; not used currently
+    igtl_uint32 timeIncrement = (appSpecificFreq*timeNow.tv_sec); //need to check the frequency of different application
+    timeIncrement += igtl_uint32(appSpecificFreq*(timeNow.tv_usec/1.0e6)+ 0.5);
+    //igtl_uint32 CSRC = 0x00000000; not used currently
     if(igtl_is_little_endian())
     {
       rtpHdr = BYTE_SWAP_INT32(rtpHdr);
@@ -68,9 +69,9 @@ namespace igtl {
       this->fragmentTimeIncrement = timeIncrement;
       if (status != WaitingForAnotherMSG) // only the add header at the paket begin
       {
-        memmove(packedMsg, (void *)(rtpHdr), 4);
-        memmove(packedMsg, (void *)(timeIncrement), 4);
-        memmove(packedMsg, (void *)(SSRC), 4); // SSRC needs to set by different devices, collision should be avoided.
+        memmove(packedMsg, (void *)(&rtpHdr), 4);
+        memmove(packedMsg, (void *)(&timeIncrement), 4);
+        memmove(packedMsg, (void *)(&SSRC), 4); // SSRC needs to set by different devices, collision should be avoided.
       }
       if (totMsgLen <= AvailabeBytesNum)
       {
@@ -97,9 +98,9 @@ namespace igtl {
     }
     else
     {
-      memmove(packedMsg, (void *)(rtpHdr), 4);
-      memmove(packedMsg, (void *)(this->fragmentTimeIncrement), 4);
-      memmove(packedMsg, (void *)(SSRC), 4); // SSRC needs to set by different devices, collision should be avoided.
+      memmove(packedMsg, (void *)(&rtpHdr), 4);
+      memmove(packedMsg, (void *)(&this->fragmentTimeIncrement), 4);
+      memmove(packedMsg, (void *)(&SSRC), 4); // SSRC needs to set by different devices, collision should be avoided.
       if (totMsgLen <= AvailabeBytesNum)
       {
         memmove(packedMsg + RTP_HEADER_LENGTH, (void *)(header), totMsgLen);

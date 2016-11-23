@@ -30,7 +30,7 @@ if (${OpenIGTLink_PROTOCOL_VERSION} STREQUAL "2")
     )
 endif (${OpenIGTLink_PROTOCOL_VERSION} STREQUAL "2")
 
-
+SET(EXAMPLE_DIRS TrackingDataUDPTransfer)
 ## Imager program isn't supported by QNX
 
 if(NOT OpenIGTLink_PLATFORM_QNX)

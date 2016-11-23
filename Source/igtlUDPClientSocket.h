@@ -30,6 +30,7 @@
 #ifndef __igtlUDPClientSocket_h
 #define __igtlUDPClientSocket_h
 
+#include <errno.h>
 #include "igtlGeneralSocket.h"
 #include "igtlWin32Header.h"
 
