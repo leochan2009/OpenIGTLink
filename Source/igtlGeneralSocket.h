@@ -171,10 +171,6 @@ namespace igtl
     /// Returns 0 on success other -1 is returned.
     int BindSocket(int socketdescriptor, int port);
     
-    /// Binds socket to a particular port.
-    /// Returns 0 on success other -1 is returned.
-    int BindUDPSocket(int socketdescriptor, int port);
-    
     /// Selects a socket ie. waits for it to change status.
     /// Returns 1 on success; 0 on timeout; -1 on error. msec=0 implies
     /// no timeout.

@@ -22,10 +22,10 @@
 #include "igtlOSUtil.h"
 #include "igtlTrackingDataMessage.h"
 #include "igtlMessageRTPWrapper.h"
-#include "igtlClientSocket.h"
+#include "igtlUDPClientSocket.h"
 
 
-int ReceiveTrackingData(igtl::ClientSocket::Pointer& socket, igtl::MessageHeader::Pointer& header);
+int ReceiveTrackingData(igtl::UDPClientSocket::Pointer& socket);
 
 int main(int argc, char* argv[])
 {
@@ -50,90 +50,30 @@ int main(int argc, char* argv[])
   //------------------------------------------------------------
   // Establish Connection
 
-  igtl::ClientSocket::Pointer socket;
-  socket = igtl::ClientSocket::New();
-  int r = socket->ConnectToServer(hostname, port);
-
-  if (r != 0)
-    {
-    std::cerr << "Cannot connect to the server." << std::endl;
-    exit(0);
-    }
-
-  //------------------------------------------------------------
-  // Ask the server to start pushing tracking data
-  std::cerr << "Sending STT_TDATA message....." << std::endl; 
-  igtl::StartTrackingDataMessage::Pointer startTrackingMsg;
-  startTrackingMsg = igtl::StartTrackingDataMessage::New();
-  startTrackingMsg->SetDeviceName("TDataClient");
-  startTrackingMsg->SetResolution(interval);
-  startTrackingMsg->SetCoordinateName("Patient");
-  startTrackingMsg->Pack();
-  socket->Send(startTrackingMsg->GetPackPointer(), startTrackingMsg->GetPackSize());
-
+  igtl::UDPClientSocket::Pointer socket;
+  socket = igtl::UDPClientSocket::New();
   int loop = 0;
-
-  while (1)
-    {
-    //------------------------------------------------------------
-    // Wait for a reply
-    igtl::MessageHeader::Pointer headerMsg;
-    headerMsg = igtl::MessageHeader::New();
-    headerMsg->InitPack();
-    int rs = socket->Receive(headerMsg->GetPackPointer(), headerMsg->GetPackSize());
-    if (rs == 0)
-      {
-      std::cerr << "Connection closed." << std::endl;
-      socket->CloseSocket();
-      exit(0);
-      }
-    if (rs != headerMsg->GetPackSize())
-      {
-      std::cerr << "Message size information and actual data size don't match." << std::endl; 
-      socket->CloseSocket();
-      exit(0);
-      }
+  for (loop = 0; loop<100; loop++)
+  {
     
-    headerMsg->Unpack();
-    if (strcmp(headerMsg->GetDeviceType(), "TDATA") == 0)
-      {
-      ReceiveTrackingData(socket, headerMsg);
-      }
-    else
-      {
-      std::cerr << "Receiving : " << headerMsg->GetDeviceType() << std::endl;
-      socket->Skip(headerMsg->GetBodySizeToRead(), 0);
-      }
-    if (++loop >= 10) // if received 100 times
-      {
-      //------------------------------------------------------------
-      // Ask the server to stop pushing tracking data
-      std::cerr << "Sending STP_TDATA message....." << std::endl; 
-      igtl::StopTrackingDataMessage::Pointer stopTrackingMsg;
-      stopTrackingMsg = igtl::StopTrackingDataMessage::New();
-      stopTrackingMsg->SetDeviceName("TDataClient");
-      stopTrackingMsg->Pack();
-      socket->Send(stopTrackingMsg->GetPackPointer(), stopTrackingMsg->GetPackSize());
-      loop = 0;
-      }
-    }
+    igtl::Sleep(interval);
+  }
+  
 }
 
 
-int ReceiveTrackingData(igtl::ClientSocket::Pointer& socket, igtl::MessageHeader::Pointer& header)
+int ReceiveTrackingData(igtl::UDPClientSocket::Pointer& socket)
 {
-  std::cerr << "Receiving TDATA data type." << std::endl;
+  // Receive body from the socket
+  unsigned char *buffer = new unsigned char[RTP_PAYLOAD_LENGTH];
+  socket->ReadSocket(buffer, RTP_PAYLOAD_LENGTH);
   
-  //------------------------------------------------------------
-  // Allocate TrackingData Message Class
-
+  
+  igtl::MessageHeader::Pointer header;
   igtl::TrackingDataMessage::Pointer trackingData;
   trackingData = igtl::TrackingDataMessage::New();
   trackingData->SetMessageHeader(header);
   trackingData->AllocatePack();
-
-  // Receive body from the socket
-  socket->Receive(trackingData->GetPackBodyPointer(), trackingData->GetPackBodySize());
 
   // Deserialize the transform data
   // If you want to skip CRC check, call Unpack() without argument.

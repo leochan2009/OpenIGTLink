@@ -25,8 +25,7 @@ build:
 branches:
   #whitelist
   only:
-    - openigtlink/master
-    - master
+    - VideoStream
       
 clone_depth: 1
 skip_tags: true
