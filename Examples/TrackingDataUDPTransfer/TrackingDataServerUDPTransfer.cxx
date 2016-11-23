@@ -162,7 +162,7 @@ int SendTrackingData(igtl::UDPServerSocket::Pointer& socket, igtl::TrackingDataM
     status = rtpWrapper->WrapMessage(messagePointer, messageLength);
     if (status == igtl::MessageRTPWrapper::WaitingForFragment)
     {
-      socket->Send((void*)rtpWrapper->GetPackPointer(), RTP_PAYLOAD_LENGTH);
+      socket->WriteSocket(rtpWrapper->GetPackPointer(), RTP_PAYLOAD_LENGTH);
       messagePointer += RTP_PAYLOAD_LENGTH;
       messageLength -= RTP_PAYLOAD_LENGTH;
     }

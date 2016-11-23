@@ -40,12 +40,12 @@ UDPServerSocket::~UDPServerSocket()
 {
 }
   
-int UDPServerSocket::AddClient(struct in_addr add, igtl_uint16 port, unsigned int clientID)
+int UDPServerSocket::AddClient(const char* add, igtl_uint16 port, unsigned int clientID)
 {
   for(int i = 0; this->clients.size(); i++)
   {
     if (this->clients[i].clientId == clientID &&
-        this->clients[i].address.s_addr == add.s_addr
+        (strcmp((const char *)this->clients[i].address ,add)==0)
         && this->clients[i].portNum ==  port )
     {
       
@@ -67,8 +67,9 @@ int UDPServerSocket::WriteSocket(unsigned char* buffer, unsigned bufferSize)
 #else
     int addressLength = sizeof(this->clients[i].address);
 #endif
-    int bytesSent = sendto(this->m_SocketDescriptor, (char*)buffer, bufferSize, 0,
-                           (struct sockaddr*)&this->clients[i].address, addressLength);
+    this->SetIPAddress((const char*)this->clients[i].address);
+    this->SetPortNumber(this->clients[i].portNum);
+    int bytesSent = SendUDP((char*)buffer, bufferSize);
     if (bytesSent != (int)bufferSize) {
       successul = -1;
       continue; //to do: how to handle the unsuccessful transmission?

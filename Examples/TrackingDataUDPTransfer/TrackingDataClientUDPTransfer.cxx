@@ -25,7 +25,7 @@
 #include "igtlUDPClientSocket.h"
 
 
-int ReceiveTrackingData(igtl::UDPClientSocket::Pointer& socket);
+int ReceiveTrackingData(igtl::TrackingDataMessage::Pointer& msgData);
 
 int main(int argc, char* argv[])
 {
@@ -52,28 +52,27 @@ int main(int argc, char* argv[])
 
   igtl::UDPClientSocket::Pointer socket;
   socket = igtl::UDPClientSocket::New();
+  socket->SetIPAddress(hostname);
+  socket->SetPortNumber(port);
+  unsigned char* buffer = new unsigned char[RTP_PAYLOAD_LENGTH];
+  igtl::MessageRTPWrapper::Pointer rtpWrapper = igtl::MessageRTPWrapper::New();
   int loop = 0;
   for (loop = 0; loop<100; loop++)
   {
+    socket->ReadSocket(buffer, RTP_PAYLOAD_LENGTH);
     
     igtl::Sleep(interval);
   }
-  
 }
 
 
-int ReceiveTrackingData(igtl::UDPClientSocket::Pointer& socket)
+int ReceiveTrackingData(igtl::TrackingDataMessage::Pointer& msgData)
 {
   // Receive body from the socket
-  unsigned char *buffer = new unsigned char[RTP_PAYLOAD_LENGTH];
-  socket->ReadSocket(buffer, RTP_PAYLOAD_LENGTH);
-  
-  
-  igtl::MessageHeader::Pointer header;
   igtl::TrackingDataMessage::Pointer trackingData;
   trackingData = igtl::TrackingDataMessage::New();
-  trackingData->SetMessageHeader(header);
-  trackingData->AllocatePack();
+  //trackingData->SetMessageHeader(header);
+  trackingData->Copy(msgData);
 
   // Deserialize the transform data
   // If you want to skip CRC check, call Unpack() without argument.

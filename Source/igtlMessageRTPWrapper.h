@@ -74,7 +74,9 @@ public:
   /// Gets the number of fragments to be sent for the packed (serialized) data. Returns numberOfDataFragToSent
   int GetNumberODataFragToSent() { return numberOfDataFragToSent;  /* the data for transmission is too big for UDP transmission, so the data will be transmitted by multiple packets*/ };
   
-  int WrapMessage(igtl_uint8* header, int totMsgLen);
+  int WrapMessage(igtl_uint8* messageHead, int totMsgLen);
+  
+  int UnWrapMessage(igtl_uint8* messageHead, int totMsgLen);
   
   void SetPayLoadType(unsigned char type){RTPPayLoadType = type;};
   

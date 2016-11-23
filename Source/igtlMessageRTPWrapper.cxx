@@ -41,7 +41,7 @@ namespace igtl {
     }
   }
   
-  int MessageRTPWrapper::WrapMessage(igtl_uint8* header, int totMsgLen)
+  int MessageRTPWrapper::WrapMessage(igtl_uint8* messageHead, int totMsgLen)
   {
     // Set up the RTP header:
     igtl_uint32 rtpHdr = 0x80000000; // RTP version 2;
@@ -75,7 +75,7 @@ namespace igtl {
       }
       if (totMsgLen <= AvailabeBytesNum)
       {
-        memmove(packedMsg + RTP_HEADER_LENGTH, (void *)(header), totMsgLen);
+        memmove(packedMsg + RTP_HEADER_LENGTH, (void *)(messageHead), totMsgLen);
         AvailabeBytesNum -= totMsgLen;
         if (AvailabeBytesNum > MinimumPaketSpace)// when it is packing the fragment, we want to sent the data ASAP, otherwize, we will wait for another message
         {
@@ -90,7 +90,7 @@ namespace igtl {
       else if(totMsgLen > AvailabeBytesNum)
       {
         totMsgLen -= AvailabeBytesNum;
-        memmove(packedMsg + RTP_HEADER_LENGTH, (void *)(header), AvailabeBytesNum);
+        memmove(packedMsg + RTP_HEADER_LENGTH, (void *)(messageHead), AvailabeBytesNum);
         status = WaitingForFragment;
         this->curFragLocation += AvailabeBytesNum;
         AvailabeBytesNum = RTP_PAYLOAD_LENGTH;
@@ -103,13 +103,91 @@ namespace igtl {
       memmove(packedMsg, (void *)(&SSRC), 4); // SSRC needs to set by different devices, collision should be avoided.
       if (totMsgLen <= AvailabeBytesNum)
       {
-        memmove(packedMsg + RTP_HEADER_LENGTH, (void *)(header), totMsgLen);
+        memmove(packedMsg + RTP_HEADER_LENGTH, (void *)(messageHead), totMsgLen);
         // when it is packing the fragment, we want to sent the data ASAP, otherwize, we will wait for another message
         status = PaketReady;
       }
       else if(totMsgLen > AvailabeBytesNum)
       {
-        memmove(packedMsg + RTP_HEADER_LENGTH, (void *)(header), AvailabeBytesNum);
+        memmove(packedMsg + RTP_HEADER_LENGTH, (void *)(messageHead), AvailabeBytesNum);
+        status = WaitingForFragment;
+        this->curFragLocation += AvailabeBytesNum;
+      }
+      AvailabeBytesNum = RTP_PAYLOAD_LENGTH;
+    }
+    return status;
+  }
+  
+  
+  int MessageRTPWrapper::UnWrapMessage(igtl_uint8* messageHead, int totMsgLen)
+  {
+    // Set up the RTP header:
+    igtl_uint32 rtpHdr = 0x80000000; // RTP version 2;
+    rtpHdr |= (RTPPayLoadType<<16);
+    rtpHdr |= SeqNum; // sequence number, increment the sequence number after sending the data
+    struct timeval timeNow;
+    gettimeofday(&timeNow, NULL);
+    igtl_uint32 timeIncrement = (appSpecificFreq*timeNow.tv_sec); //need to check the frequency of different application
+    timeIncrement += igtl_uint32(appSpecificFreq*(timeNow.tv_usec/1.0e6)+ 0.5);
+    //igtl_uint32 CSRC = 0x00000000; not used currently
+    if(igtl_is_little_endian())
+    {
+      rtpHdr = BYTE_SWAP_INT32(rtpHdr);
+      timeIncrement = BYTE_SWAP_INT32(timeIncrement);
+    }
+    if (status == PaketReady)
+    {
+      delete packedMsg;
+      packedMsg = new unsigned char[RTP_PAYLOAD_LENGTH + RTP_HEADER_LENGTH];
+      AvailabeBytesNum = RTP_PAYLOAD_LENGTH;
+      curFragLocation = 0;
+    }
+    if (status != WaitingForFragment)
+    {
+      this->fragmentTimeIncrement = timeIncrement;
+      if (status != WaitingForAnotherMSG) // only the add header at the paket begin
+      {
+        memmove(packedMsg, (void *)(&rtpHdr), 4);
+        memmove(packedMsg, (void *)(&timeIncrement), 4);
+        memmove(packedMsg, (void *)(&SSRC), 4); // SSRC needs to set by different devices, collision should be avoided.
+      }
+      if (totMsgLen <= AvailabeBytesNum)
+      {
+        memmove(packedMsg + RTP_HEADER_LENGTH, (void *)(messageHead), totMsgLen);
+        AvailabeBytesNum -= totMsgLen;
+        if (AvailabeBytesNum > MinimumPaketSpace)// when it is packing the fragment, we want to sent the data ASAP, otherwize, we will wait for another message
+        {
+          status = WaitingForAnotherMSG;
+        }
+        else
+        {
+          status = PaketReady;
+          SeqNum++;
+        }
+      }
+      else if(totMsgLen > AvailabeBytesNum)
+      {
+        totMsgLen -= AvailabeBytesNum;
+        memmove(packedMsg + RTP_HEADER_LENGTH, (void *)(messageHead), AvailabeBytesNum);
+        status = WaitingForFragment;
+        this->curFragLocation += AvailabeBytesNum;
+        AvailabeBytesNum = RTP_PAYLOAD_LENGTH;
+      }
+    }
+    else
+    {
+      memmove(packedMsg, (void *)(&rtpHdr), 4);
+      memmove(packedMsg, (void *)(&this->fragmentTimeIncrement), 4);
+      memmove(packedMsg, (void *)(&SSRC), 4); // SSRC needs to set by different devices, collision should be avoided.
+      if (totMsgLen <= AvailabeBytesNum)
+      {
+        memmove(packedMsg + RTP_HEADER_LENGTH, (void *)(messageHead), totMsgLen);
+        // when it is packing the fragment, we want to sent the data ASAP, otherwize, we will wait for another message
+        status = PaketReady;
+      }
+      else if(totMsgLen > AvailabeBytesNum)
+      {
+        memmove(packedMsg + RTP_HEADER_LENGTH, (void *)(messageHead), AvailabeBytesNum);
         status = WaitingForFragment;
         this->curFragLocation += AvailabeBytesNum;
       }

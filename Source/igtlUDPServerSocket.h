@@ -45,13 +45,14 @@ namespace igtl
 class ClientDest
 {
 public:
-  ClientDest(struct in_addr add, u_int16_t port, unsigned int clientID)
+  ClientDest(const char* add, igtl_uint16 port, unsigned int clientID)
   {
-    this->address = add;
+    this->address = new unsigned char[INET_ADDRSTRLEN];
+    strcpy((char*)this->address, add);
     this->portNum = port;
     this->clientId = clientID;
   };
-  struct in_addr address;
+  unsigned char* address;
   u_int16_t portNum; // should be in network byte order
   unsigned int clientId;
 };
@@ -70,7 +71,7 @@ public:
   // Description:
   // Add a client socket with given address at a given port and binds to it.
   // Returns -1 on error. return clientID on success.
-  int AddClient(struct in_addr add, igtl_uint16 port, unsigned int clientID);
+  int AddClient(const char* add, igtl_uint16 port, unsigned int clientID);
   
   // Description:
   // Add a client socket with given address at a given port and binds to it.

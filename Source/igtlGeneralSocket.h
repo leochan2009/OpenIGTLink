@@ -78,7 +78,6 @@ namespace igtl
     igtlNewMacro(igtl::GeneralSocket);
     
   public:
-    
     /// Check is the socket is alive.
     int GetConnected() { return (this->m_SocketDescriptor >=0); }
     
@@ -87,6 +86,18 @@ namespace igtl
       this->CloseSocket(this->m_SocketDescriptor);
       this->m_SocketDescriptor = -1;
     }
+    /// Get socket address
+    int GetSocketAddressAndPort(std::string& address, int & port);
+    
+    /// Skip reading data from the socket.
+    /// The Skip() call has been newly introduced to the igtlSocket,
+    /// after the class is imported from VTK, thus the call is
+    /// not available in vtkSocket class.
+    int Skip(int length, int skipFully=1);
+    
+    int SetIPAddress(const char* ip);
+    
+    int SetPortNumber(igtl_uint16 port);
     
     /// These methods send data over the socket.
     /// Returns 1 on success, 0 on error and raises vtkCommand::ErrorEvent.
@@ -133,15 +144,6 @@ namespace igtl
     /// Set (psuedo) non-blocking mode for recv(). When sw=1, the time out is set to
     /// minimum value (1 microsecond in UNIX, 1 millisecond in Windows) for sending.
     int SetSendBlocking(int sw);
-    
-    /// Get socket address
-    int GetSocketAddressAndPort(std::string& address, int & port);
-    
-    /// Skip reading data from the socket.
-    /// The Skip() call has been newly introduced to the igtlSocket,
-    /// after the class is imported from VTK, thus the call is
-    /// not available in vtkSocket class.
-    int Skip(int length, int skipFully=1);
     
   protected:
     GeneralSocket();
@@ -213,6 +215,9 @@ namespace igtl
 #endif
     int m_SendTimeoutFlag;
     int m_ReceiveTimeoutFlag;
+    
+    in_port_t PortNum;
+    char IPAddress[INET_ADDRSTRLEN];
     
   };
   

@@ -422,6 +422,21 @@ namespace igtl
     return total;
   }
   
+  int GeneralSocket::SetIPAddress(const char* ip)
+  {
+    if(strcpy(this->IPAddress,ip))
+    {
+      return 0;
+    }
+    return -1;
+  }
+  
+  int GeneralSocket::SetPortNumber(igtl_uint16 port)
+  {
+    this->PortNum = (in_port_t) port;
+    return 0;
+  }
+  
   //-----------------------------------------------------------------------------
   int GeneralSocket::SendUDP(const void* data, int length)
   {
@@ -472,10 +487,11 @@ namespace igtl
     }
     
     struct sockaddr_in dest;
-    //dest.sin_family = AF_INET;
-    //dest.sin_addr.s_addr = (address.s_addr);
-    //dest.sin_port = (this->PortNum);
-    //dest.sin_len = sizeof dest;
+    dest.sin_family = AF_INET;
+    
+    // store this IP address in dest:
+    inet_pton(AF_INET, this->IPAddress, &(dest.sin_addr));
+    dest.sin_port = (this->PortNum);
     
     int n = sendto(this->m_SocketDescriptor, (char*)data, length, 0, (struct sockaddr*)&dest, sizeof dest);
     if(n < 0)
@@ -501,9 +517,14 @@ namespace igtl
 #if defined(_WIN32) && !defined(__CYGWIN__)
       int trys = 0;
 #endif
-      struct sockaddr dest;
+      struct sockaddr_in dest;
+      dest.sin_family = AF_INET;
+      
+      // store this IP address in dest:
+      inet_pton(AF_INET, this->IPAddress, &(dest.sin_addr));
+      dest.sin_port = (this->PortNum);
       socklen_t addressLen = sizeof dest;
-      int n = recvfrom(this->m_SocketDescriptor, (void*)(buffer+total), length-total, 0, &dest, &addressLen);
+      int n = recvfrom(this->m_SocketDescriptor, (void*)(buffer+total), length-total, 0, (struct sockaddr*)&dest, &addressLen);
       
 #if defined(_WIN32) && !defined(__CYGWIN__)
       if(n == 0)
@@ -744,17 +765,17 @@ namespace igtl
     
     if( getsockname(this->m_SocketDescriptor, reinterpret_cast<sockaddr*>(&sockinfo), &sizebuf) != 0)
     {
-      return 0;
+      return -1;
     }
     const char* a = inet_ntoa(sockinfo.sin_addr);
     if ( a == NULL )
     {
-      return 0;
+      return -1;
     }
     address = a;
     port = ntohs(sockinfo.sin_port);
     
-    return 1;
+    return 0;
   }
   
   
