@@ -55,7 +55,10 @@ public:
   {
     PaketReady,
     WaitingForAnotherMSG,
-    WaitingForFragment
+    WaitingForFragment,
+    MessageReady,
+    ToUnpackAnotherMSG,
+    WaitingForAnotherPaket
   };
   //virtual void  AllocateScalars();
 

@@ -121,28 +121,28 @@ namespace igtl {
   
   int MessageRTPWrapper::UnWrapMessage(igtl_uint8* messageHead, int totMsgLen)
   {
+    if (totMsgLen<12) return -1;
+    
     // Set up the RTP header:
-    igtl_uint32 rtpHdr = 0x80000000; // RTP version 2;
-    rtpHdr |= (RTPPayLoadType<<16);
-    rtpHdr |= SeqNum; // sequence number, increment the sequence number after sending the data
-    struct timeval timeNow;
-    gettimeofday(&timeNow, NULL);
-    igtl_uint32 timeIncrement = (appSpecificFreq*timeNow.tv_sec); //need to check the frequency of different application
-    timeIncrement += igtl_uint32(appSpecificFreq*(timeNow.tv_usec/1.0e6)+ 0.5);
-    //igtl_uint32 CSRC = 0x00000000; not used currently
+    igtl_uint32  rtpHdr, timeIncrement;
+    rtpHdr = *((igtl_uint32*)messageHead);
+    //bool rtpMarkerBit = (rtpHdr&0x00800000) != 0;
+    timeIncrement = *(igtl_uint32*)(messageHead+4);
+    SSRC = *(igtl_uint32*)(messageHead+8);
     if(igtl_is_little_endian())
     {
       rtpHdr = BYTE_SWAP_INT32(rtpHdr);
       timeIncrement = BYTE_SWAP_INT32(timeIncrement);
+      SSRC = BYTE_SWAP_INT32(SSRC);
     }
-    if (status == PaketReady)
+    if (status == MessageReady)
     {
       delete packedMsg;
       packedMsg = new unsigned char[RTP_PAYLOAD_LENGTH + RTP_HEADER_LENGTH];
       AvailabeBytesNum = RTP_PAYLOAD_LENGTH;
       curFragLocation = 0;
     }
-    if (status != WaitingForFragment)
+    if (status != WaitingForAnotherPaket)
     {
       this->fragmentTimeIncrement = timeIncrement;
       if (status != WaitingForAnotherMSG) // only the add header at the paket begin
@@ -157,7 +157,7 @@ namespace igtl {
         AvailabeBytesNum -= totMsgLen;
         if (AvailabeBytesNum > MinimumPaketSpace)// when it is packing the fragment, we want to sent the data ASAP, otherwize, we will wait for another message
         {
-          status = WaitingForAnotherMSG;
+          status = ToUnpackAnotherMSG;
         }
         else
         {
