@@ -79,12 +79,20 @@ public:
   
   int WrapMessage(igtl_uint8* messageHead, int totMsgLen);
   
-  int UnWrapMessage(igtl_uint8* messageHead, int totMsgLen);
+  igtl::MessageBase::Pointer UnWrapMessage(igtl_uint8* messageHead, int totMsgLen);
   
   void SetPayLoadType(unsigned char type){RTPPayLoadType = type;};
   
-  ///Set the synchronization source identifier
+  ///Set the synchronization source identifier, different session has different SSRC
   void SetSSRC(igtl_uint32 identifier);
+  
+  ///Set the Contributing source identifier. different device has different CSRC
+  void SetCSRC(igtl_uint32 identifier);
+  
+  ///Set the current msg header
+  void SetMSGHeader(igtl_uint8* header);
+  
+  int GetCurMSGLocation(){return this->curMSGLocation;};
   
 protected:
   MessageRTPWrapper();
@@ -92,7 +100,10 @@ protected:
   
 private:
   igtl_uint8* packedMsg;
-  int curFragLocation;
+  igtl_uint8* MSGHeader;
+  unsigned int curMSGLocation;
+  unsigned int curPackedMSGLocation;
+  igtl_uint8 framentNumber;
   unsigned int numberOfDataFrag;
   unsigned int numberOfDataFragToSent;
   unsigned char RTPPayLoadType;
@@ -101,6 +112,7 @@ private:
   int status;
   igtl_uint32 appSpecificFreq;
   igtl_uint32 SSRC;
+  igtl_uint32 CSRC;
   igtl_uint32 fragmentTimeIncrement;
   
 };

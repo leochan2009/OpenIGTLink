@@ -33,6 +33,7 @@
 #define __igtlUDPServerSocket_h
 
 //#include <vector>
+#include <string.h>
 
 #include "igtlGeneralSocket.h"
 #include "igtlUDPClientSocket.h"

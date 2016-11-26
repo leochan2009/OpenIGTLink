@@ -155,19 +155,20 @@ int SendTrackingData(igtl::UDPServerSocket::Pointer& socket, igtl::TrackingDataM
   trackingMsg->Pack();
   rtpWrapper->SetSSRC(1);
   int status = igtl::MessageRTPWrapper::PaketReady;
-  igtl_uint8* messagePointer = (igtl_uint8*)trackingMsg->GetPackPointer();
-  int messageLength = trackingMsg->GetPackSize();
+  igtl_uint8* messagePointer = (igtl_uint8*)trackingMsg->GetPackBodyPointer();
+  rtpWrapper->SetMSGHeader((igtl_uint8*)trackingMsg->GetPackPointer());
+  int messageLength = trackingMsg->GetPackBodySize();
   do
   {
     status = rtpWrapper->WrapMessage(messagePointer, messageLength);
     if (status == igtl::MessageRTPWrapper::WaitingForFragment)
     {
-      socket->WriteSocket(rtpWrapper->GetPackPointer(), RTP_PAYLOAD_LENGTH);
-      messagePointer += RTP_PAYLOAD_LENGTH;
-      messageLength -= RTP_PAYLOAD_LENGTH;
+      socket->WriteSocket(rtpWrapper->GetPackPointer(), RTP_PAYLOAD_LENGTH+RTP_HEADER_LENGTH);
+      messagePointer += rtpWrapper->GetCurMSGLocation();
+      messageLength = trackingMsg->GetPackBodySize() - rtpWrapper->GetCurMSGLocation();
     }
   }while(status!=igtl::MessageRTPWrapper::PaketReady);
-  socket->Send((void*)rtpWrapper->GetPackPointer(), RTP_PAYLOAD_LENGTH);
+  socket->Send((void*)rtpWrapper->GetPackPointer(), RTP_PAYLOAD_LENGTH+RTP_HEADER_LENGTH);
   
   phi0 += 0.1;
   phi1 += 0.2;

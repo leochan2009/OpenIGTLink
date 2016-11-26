@@ -19,11 +19,23 @@
 #include <cstdlib>
 #include <cstring>
 
+#include <string.h>
+
 #include "igtlOSUtil.h"
 #include "igtlTrackingDataMessage.h"
 #include "igtlMessageRTPWrapper.h"
 #include "igtlUDPClientSocket.h"
 
+class ReorderBuffer
+{
+public:
+  ReorderBuffer(){firstPaketPos=0;filledPaketNum=0;receivedLastFrag=false;};
+  ~ReorderBuffer(){};
+  unsigned char buffer[RTP_PAYLOAD_LENGTH*64];  // we use 6 bits for fragment number.
+  uint32_t firstPaketPos;
+  uint32_t filledPaketNum;
+  bool receivedLastFrag;
+};
 
 int ReceiveTrackingData(igtl::TrackingDataMessage::Pointer& msgData);
 
@@ -54,13 +66,83 @@ int main(int argc, char* argv[])
   socket = igtl::UDPClientSocket::New();
   socket->SetIPAddress(hostname);
   socket->SetPortNumber(port);
-  unsigned char* buffer = new unsigned char[RTP_PAYLOAD_LENGTH];
+  unsigned char* bufferPKT = new unsigned char[RTP_PAYLOAD_LENGTH+RTP_HEADER_LENGTH];
   igtl::MessageRTPWrapper::Pointer rtpWrapper = igtl::MessageRTPWrapper::New();
+  igtl::TrackingDataMessage::Pointer trackingMultiPKTMSG = igtl::TrackingDataMessage::New();
+  ReorderBuffer reorderBuffer = ReorderBuffer();
   int loop = 0;
   for (loop = 0; loop<100; loop++)
   {
-    socket->ReadSocket(buffer, RTP_PAYLOAD_LENGTH);
-    
+    int totMsgLen = socket->ReadSocket(bufferPKT, RTP_PAYLOAD_LENGTH+RTP_HEADER_LENGTH);
+    if (totMsgLen>12)
+    {
+      // Set up the RTP header:
+      igtl_uint32  rtpHdr, timeIncrement;
+      rtpHdr = *((igtl_uint32*)bufferPKT);
+      //bool rtpMarkerBit = (rtpHdr&0x00800000) != 0;
+      timeIncrement = *(igtl_uint32*)(bufferPKT+4);
+      igtl_uint32 SSRC = *(igtl_uint32*)(bufferPKT+8);
+      if(igtl_is_little_endian())
+      {
+        rtpHdr = BYTE_SWAP_INT32(rtpHdr);
+        timeIncrement = BYTE_SWAP_INT32(timeIncrement);
+        SSRC = BYTE_SWAP_INT32(SSRC);
+      }
+      int curPackedMSGLocation = RTP_HEADER_LENGTH;
+      while(curPackedMSGLocation<totMsgLen)
+      {
+        igtl_uint8 fragmentNumber = *(bufferPKT + curPackedMSGLocation);
+        curPackedMSGLocation++;
+        igtl::MessageHeader::Pointer header = igtl::MessageHeader::New();
+        memcpy(header->GetPackPointer(), bufferPKT + curPackedMSGLocation, IGTL_HEADER_SIZE);
+        curPackedMSGLocation += IGTL_HEADER_SIZE;
+        header->Unpack();
+        if(fragmentNumber&0XFF) // fragment doesn't exist
+        {
+          
+          if (strcmp(header->GetDeviceType(),"TDATA")==0)
+          {
+            igtl::TrackingDataMessage::Pointer trackingMSG = igtl::TrackingDataMessage::New();
+            trackingMSG->SetMessageHeader(header);
+            trackingMSG->AllocatePack();
+            memcpy(trackingMSG->GetPackBodyPointer(), bufferPKT + curPackedMSGLocation, header->GetBodySizeToRead());
+          }
+          curPackedMSGLocation += header->GetBodySizeToRead();
+        }
+        else
+        {
+          if (strcmp(header->GetDeviceType(),"TDATA")==0)
+          {
+            int bodyMsgLength = (RTP_PAYLOAD_LENGTH-IGTL_HEADER_SIZE-1);//this is the length of the body within a full fragment paket
+            int totFragNumber = -1;
+            if(fragmentNumber==0X80)// To do, fix the issue when later fragment arrives earlier than the beginning fragment
+            {
+              trackingMultiPKTMSG->SetMessageHeader(header);
+              trackingMultiPKTMSG->AllocatePack();
+              memcpy(reorderBuffer.buffer, bufferPKT + curPackedMSGLocation, totMsgLen-curPackedMSGLocation);
+              reorderBuffer.firstPaketPos = totMsgLen-curPackedMSGLocation;
+            }
+            else if(fragmentNumber>0XE0)// this is the last fragment
+            {
+              totFragNumber = fragmentNumber - 0XE0 + 1;
+              memcpy(reorderBuffer.buffer+reorderBuffer.firstPaketPos+(totFragNumber-2)*bodyMsgLength, bufferPKT + RTP_HEADER_LENGTH+IGTL_HEADER_SIZE+1, totMsgLen-(RTP_HEADER_LENGTH+IGTL_HEADER_SIZE+1));
+              reorderBuffer.receivedLastFrag = true;
+            }
+            else
+            {
+              int curFragNumber = fragmentNumber - 0X80;
+              memcpy(reorderBuffer.buffer+reorderBuffer.firstPaketPos+(curFragNumber-1)*bodyMsgLength, bufferPKT + RTP_HEADER_LENGTH+IGTL_HEADER_SIZE+1, totMsgLen-(RTP_HEADER_LENGTH+IGTL_HEADER_SIZE+1));
+            }
+            reorderBuffer.filledPaketNum++;
+            if(reorderBuffer.receivedLastFrag == true && reorderBuffer.filledPaketNum == totFragNumber)
+            {
+              memcpy(trackingMultiPKTMSG->GetPackBodyPointer(), reorderBuffer.buffer, header->GetBodySizeToRead());
+            }
+          }
+          break;
+        }
+      }
+    }
     igtl::Sleep(interval);
   }
 }
