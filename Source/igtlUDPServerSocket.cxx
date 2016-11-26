@@ -60,7 +60,7 @@ int UDPServerSocket::AddClient(const char* add, igtl_uint16 port, unsigned int c
 int UDPServerSocket::WriteSocket(unsigned char* buffer, unsigned bufferSize)
 {
   int successul = 0;
-  for(int i = 0; this->clients.size(); i++)
+  for(int i = 0; i < this->clients.size(); i++)
   {
 #if defined(OpenIGTLink_HAVE_GETSOCKNAME_WITH_SOCKLEN_T)
     socklen_t addressLength = sizeof(this->clients[i].address);
@@ -69,8 +69,8 @@ int UDPServerSocket::WriteSocket(unsigned char* buffer, unsigned bufferSize)
 #endif
     this->SetIPAddress((const char*)this->clients[i].address);
     this->SetPortNumber(this->clients[i].portNum);
-    int bytesSent = SendUDP((char*)buffer, bufferSize);
-    if (bytesSent != (int)bufferSize) {
+    successul = SendUDP((char*)buffer, bufferSize);
+    if (!successul) {
       successul = -1;
       continue; //to do: how to handle the unsuccessful transmission?
     }

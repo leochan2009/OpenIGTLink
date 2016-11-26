@@ -29,7 +29,7 @@
 #include "igtlMessageRTPWrapper.h"
 
 
-void WriteSocket(igtl::UDPServerSocket::Pointer serverSocket,igtl::MessageRTPWrapper::Pointer rtpWrapper);
+void WrapMessage(igtl::UDPServerSocket::Pointer serverSocket,igtl::MessageRTPWrapper::Pointer rtpWrapper);
 int   SendTrackingData(igtl::UDPServerSocket::Pointer& socket, igtl::TrackingDataMessage::Pointer& trackingMsg, igtl::MessageRTPWrapper::Pointer rtpWrapper);
 void  GetRandomTestMatrix(igtl::Matrix4x4& matrix, float phi, float theta);
 
@@ -49,11 +49,10 @@ int main(int argc, char* argv[])
     }
 
   int    port     = atoi(argv[1]);
-
   igtl::UDPServerSocket::Pointer serverSocket;
   serverSocket = igtl::UDPServerSocket::New();
   int r = serverSocket->CreateUDPServer(port);
-
+  serverSocket->AddClient("127.0.0.1", 18944, 1);
   if (r < 0)
     {
     std::cerr << "Cannot create a server socket." << std::endl;
@@ -67,7 +66,7 @@ int main(int argc, char* argv[])
   // loop
   for (int i = 0;i<100;i++)
   {
-    WriteSocket(serverSocket, rtpWrapper);
+    WrapMessage(serverSocket, rtpWrapper);
   }
   
   //------------------------------------------------------------
@@ -77,12 +76,12 @@ int main(int argc, char* argv[])
 }
 
 
-void WriteSocket(igtl::UDPServerSocket::Pointer serverSocket, igtl::MessageRTPWrapper::Pointer rtpWrapper)
+void WrapMessage(igtl::UDPServerSocket::Pointer serverSocket, igtl::MessageRTPWrapper::Pointer rtpWrapper)
 {
   //------------------------------------------------------------
   // Get user data
   igtl::MutexLock::Pointer glock = igtl::MutexLock::New();
-  long interval = 200;
+  long interval = 5000;
   std::cerr << "Interval = " << interval << " (ms)" << std::endl;
   //long interval = 1000;
   //long interval = (id + 1) * 100; // (ms)
@@ -168,7 +167,7 @@ int SendTrackingData(igtl::UDPServerSocket::Pointer& socket, igtl::TrackingDataM
       messageLength = trackingMsg->GetPackBodySize() - rtpWrapper->GetCurMSGLocation();
     }
   }while(status!=igtl::MessageRTPWrapper::PaketReady);
-  socket->Send((void*)rtpWrapper->GetPackPointer(), RTP_PAYLOAD_LENGTH+RTP_HEADER_LENGTH);
+  socket->WriteSocket(rtpWrapper->GetPackPointer(), RTP_PAYLOAD_LENGTH+RTP_HEADER_LENGTH);
   
   phi0 += 0.1;
   phi1 += 0.2;

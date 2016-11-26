@@ -101,7 +101,8 @@ namespace igtl {
       }
       if (totMsgLen <= (AvailabeBytesNum-1-IGTL_HEADER_SIZE))
       {
-        memmove(packedMsg+curPackedMSGLocation, 0X00, 1); // no fragmented message here
+        igtl_uint8 temp = 0X00;
+        memmove(packedMsg+curPackedMSGLocation, (void*)&temp, 1); // no fragmented message here
         curPackedMSGLocation++;
         memmove(packedMsg+curPackedMSGLocation, this->MSGHeader, IGTL_HEADER_SIZE);
         curPackedMSGLocation += IGTL_HEADER_SIZE;
@@ -120,7 +121,8 @@ namespace igtl {
       }
       else if(totMsgLen > (AvailabeBytesNum-1-IGTL_HEADER_SIZE))
       {
-        memmove(packedMsg+curPackedMSGLocation, (void*)0X80, 1);
+        igtl_uint8 temp = 0X80;
+        memmove(packedMsg+curPackedMSGLocation, (void*)&temp, 1);
         // fragmented message exists, first bit indicate the existance, the second bit indicates if the current section is the ending fragment, the other 6 bits indicates the fragements' sequence number.
         curPackedMSGLocation++;
         memmove(packedMsg+curPackedMSGLocation, this->MSGHeader, IGTL_HEADER_SIZE);

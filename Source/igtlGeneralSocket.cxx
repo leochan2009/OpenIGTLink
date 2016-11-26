@@ -105,7 +105,7 @@ namespace igtl
       return -1;
     }
 #endif
-    int sock = socket(AF_INET, SOCK_DGRAM, 0);
+    int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     
     const igtl_uint8 loop = 0; //disable loop back to the host
     if (setsockopt(sock, IPPROTO_IP, IP_MULTICAST_LOOP,

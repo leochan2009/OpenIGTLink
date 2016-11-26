@@ -49,6 +49,8 @@ public:
 
   igtlTypeMacro(igtl::UDPClientSocket, igtl::GeneralSocket)
   igtlNewMacro(igtl::UDPClientSocket);
+  
+  int CreateUDPClient(int portNum);
 
   int ReadSocket(unsigned char* buffer, unsigned bufferSize);
   
