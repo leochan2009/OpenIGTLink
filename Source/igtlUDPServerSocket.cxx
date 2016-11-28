@@ -91,13 +91,13 @@ int UDPServerSocket::CreateUDPServer(int port)
   {
     return -1;
   }
-  if ( this->BindSocket(this->m_SocketDescriptor, port) != 0)
+  /*if ( this->BindSocket(this->m_SocketDescriptor, port) != 0)
   {
     // failed to bind or listen.
     this->CloseSocket(this->m_SocketDescriptor);
     this->m_SocketDescriptor = -1;
     return -1;
-  }
+  }*/ // Bind socket in the server would conflict the binding in the client.
   // Success.
   return 0;
 }

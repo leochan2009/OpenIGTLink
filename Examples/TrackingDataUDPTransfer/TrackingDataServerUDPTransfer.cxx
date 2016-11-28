@@ -160,9 +160,9 @@ int SendTrackingData(igtl::UDPServerSocket::Pointer& socket, igtl::TrackingDataM
   do
   {
     status = rtpWrapper->WrapMessage(messagePointer, messageLength);
-    if (status == igtl::MessageRTPWrapper::WaitingForFragment)
+    if (status == igtl::MessageRTPWrapper::WaitingForFragment || status == igtl::MessageRTPWrapper::PaketReady)
     {
-      socket->WriteSocket(rtpWrapper->GetPackPointer(), RTP_PAYLOAD_LENGTH+RTP_HEADER_LENGTH);
+      socket->WriteSocket(rtpWrapper->GetPackPointer(), rtpWrapper->GetPackedMSGLocation());
       messagePointer += rtpWrapper->GetCurMSGLocation();
       messageLength = trackingMsg->GetPackBodySize() - rtpWrapper->GetCurMSGLocation();
     }

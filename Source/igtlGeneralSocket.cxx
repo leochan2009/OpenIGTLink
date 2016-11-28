@@ -491,7 +491,7 @@ namespace igtl
     
     // store this IP address in dest:
     inet_pton(AF_INET, this->IPAddress, &(dest.sin_addr));
-    dest.sin_port = (this->PortNum);
+    dest.sin_port = htons(this->PortNum);
     
     int n = sendto(this->m_SocketDescriptor, (char*)data, length, 0, (struct sockaddr*)&dest, sizeof dest);
     if(n < 0)
@@ -511,56 +511,50 @@ namespace igtl
     }
     
     char* buffer = reinterpret_cast<char*>(data);
-    int total = 0;
-    do
+#if defined(_WIN32) && !defined(__CYGWIN__)
+    int trys = 0;
+#endif
+    struct sockaddr_in dest;
+    dest.sin_family = AF_INET;
+    
+    // store this IP address in dest:
+    inet_pton(AF_INET, this->IPAddress, &(dest.sin_addr));
+    dest.sin_port = htons(this->PortNum);
+    socklen_t addressLen = sizeof dest;
+    int n = recvfrom(this->m_SocketDescriptor, (void*)buffer, length, 0, (struct sockaddr*)&dest, &addressLen);
+    
+#if defined(_WIN32) && !defined(__CYGWIN__)
+    if(n == 0)
     {
-#if defined(_WIN32) && !defined(__CYGWIN__)
-      int trys = 0;
-#endif
-      struct sockaddr_in dest;
-      dest.sin_family = AF_INET;
-      
-      // store this IP address in dest:
-      inet_pton(AF_INET, this->IPAddress, &(dest.sin_addr));
-      dest.sin_port = (this->PortNum);
-      socklen_t addressLen = sizeof dest;
-      int n = recvfrom(this->m_SocketDescriptor, (void*)(buffer+total), length-total, 0, (struct sockaddr*)&dest, &addressLen);
-      
-#if defined(_WIN32) && !defined(__CYGWIN__)
-      if(n == 0)
+      // On long messages, Windows recv sometimes fails with WSAENOBUFS, but
+      // will work if you try again.
+      int error = WSAGetLastError();
+      if ((error == WSAENOBUFS) && (trys++ < 1000))
       {
-        // On long messages, Windows recv sometimes fails with WSAENOBUFS, but
-        // will work if you try again.
-        int error = WSAGetLastError();
-        if ((error == WSAENOBUFS) && (trys++ < 1000))
-        {
-          Sleep(1);
-          continue;
-        }
-        // FIXME : Use exceptions ?  igtlErrorMacro("Socket Error: Receive failed.");
-        return 0;
+        Sleep(1);
+        continue;
       }
-      else if (n < 0)
-      {
-        // TODO: Need to check if this means timeout.
-        return -1;
-      }
+      // FIXME : Use exceptions ?  igtlErrorMacro("Socket Error: Receive failed.");
+      return 0;
+    }
+    else if (n < 0)
+    {
+      // TODO: Need to check if this means timeout.
+      return -1;
+    }
 #else
-      if(n == 0) // Disconnected
-      {
-        // FIXME : Use exceptions ?  igtlErrorMacro("Socket Error: Receive failed.");
-        return 0;
-      }
-      else if (n < 0) // Error (including time out)
-      {
-        // TODO: If it is time-out, errno == EAGAIN
-        return -1;
-      }
+    if(n == 0) // Disconnected
+    {
+      // FIXME : Use exceptions ?  igtlErrorMacro("Socket Error: Receive failed.");
+      return 0;
+    }
+    else if (n < 0) // Error (including time out)
+    {
+      // TODO: If it is time-out, errno == EAGAIN
+      return -1;
+    }
 #endif
-      
-      total += n;
-    } while(total < length);
-    return total;
+    return n;
   }
 
   

@@ -94,6 +94,8 @@ public:
   
   int GetCurMSGLocation(){return this->curMSGLocation;};
   
+  int GetPackedMSGLocation(){return this->curPackedMSGLocation;};
+  
 protected:
   MessageRTPWrapper();
   ~MessageRTPWrapper();

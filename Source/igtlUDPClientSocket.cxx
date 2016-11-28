@@ -49,6 +49,10 @@ int UDPClientSocket::CreateUDPClient(int portNum)
   si_me.sin_addr.s_addr = htonl(INADDR_ANY);
   this->m_SocketDescriptor= this->CreateUDPSocket();
   BindSocket(this->m_SocketDescriptor, portNum);
+  /*With UDP, you have to bind() the socket in the client because UDP is connectionless, so there is no other way for the stack to know which program to deliver datagrams to for a particular port.
+  
+  If you could recvfrom() without bind(), you'd essentially be asking the stack to give your program all UDP datagrams sent to that computer. Since the stack delivers datagrams to only one program, this would break DNS, Windows' Network Neighborhood, network time sync....*/
+  
   return this->m_SocketDescriptor;
 }
 

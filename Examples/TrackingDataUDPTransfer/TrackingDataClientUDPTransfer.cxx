@@ -29,12 +29,13 @@
 class ReorderBuffer
 {
 public:
-  ReorderBuffer(){firstPaketPos=0;filledPaketNum=0;receivedLastFrag=false;};
+  ReorderBuffer(){firstPaketPos=0;filledPaketNum=0;receivedLastFrag=false;receivedFirstFrag==false;};
   ~ReorderBuffer(){};
   unsigned char buffer[RTP_PAYLOAD_LENGTH*64];  // we use 6 bits for fragment number.
   uint32_t firstPaketPos;
   uint32_t filledPaketNum;
   bool receivedLastFrag;
+  bool receivedFirstFrag;
 };
 
 int ReceiveTrackingData(igtl::TrackingDataMessage::Pointer& msgData);
@@ -70,6 +71,7 @@ int main(int argc, char* argv[])
   unsigned char* bufferPKT = new unsigned char[RTP_PAYLOAD_LENGTH+RTP_HEADER_LENGTH];
   igtl::MessageRTPWrapper::Pointer rtpWrapper = igtl::MessageRTPWrapper::New();
   igtl::TrackingDataMessage::Pointer trackingMultiPKTMSG = igtl::TrackingDataMessage::New();
+  //std::vector<ReorderBuffer> reorderBufferVec(10, ReorderBuffer();
   ReorderBuffer reorderBuffer = ReorderBuffer();
   int loop = 0;
   for (loop = 0; loop<100; loop++)
@@ -95,10 +97,11 @@ int main(int argc, char* argv[])
         igtl_uint8 fragmentNumber = *(bufferPKT + curPackedMSGLocation);
         curPackedMSGLocation++;
         igtl::MessageHeader::Pointer header = igtl::MessageHeader::New();
+        header->AllocatePack();
         memcpy(header->GetPackPointer(), bufferPKT + curPackedMSGLocation, IGTL_HEADER_SIZE);
         curPackedMSGLocation += IGTL_HEADER_SIZE;
         header->Unpack();
-        if(fragmentNumber&0XFF) // fragment doesn't exist
+        if(fragmentNumber==0X00) // fragment doesn't exist
         {
           
           if (strcmp(header->GetDeviceType(),"TDATA")==0)
@@ -138,6 +141,8 @@ int main(int argc, char* argv[])
             if(reorderBuffer.receivedLastFrag == true && reorderBuffer.filledPaketNum == totFragNumber)
             {
               memcpy(trackingMultiPKTMSG->GetPackBodyPointer(), reorderBuffer.buffer, header->GetBodySizeToRead());
+              ReceiveTrackingData(trackingMultiPKTMSG);
+              reorderBuffer.filledPaketNum = 0;
             }
           }
           break;

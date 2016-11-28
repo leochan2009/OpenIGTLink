@@ -108,10 +108,10 @@ namespace igtl {
         curPackedMSGLocation += IGTL_HEADER_SIZE;
         memmove(packedMsg + curPackedMSGLocation, (void *)(messageBody), totMsgLen);
         AvailabeBytesNum -= (totMsgLen+1+IGTL_HEADER_SIZE);
+        curPackedMSGLocation += totMsgLen;
         if (AvailabeBytesNum > MinimumPaketSpace)// when it is packing the fragment, we want to sent the data ASAP, otherwize, we will wait for another message
         {
           status = WaitingForAnotherMSG;
-          curPackedMSGLocation += totMsgLen;
         }
         else
         {
@@ -129,7 +129,8 @@ namespace igtl {
         curPackedMSGLocation += IGTL_HEADER_SIZE;
         memmove(packedMsg + curPackedMSGLocation, (void *)(messageBody), AvailabeBytesNum-1-IGTL_HEADER_SIZE);
         status = WaitingForFragment;
-        this->curMSGLocation += (AvailabeBytesNum-1-IGTL_HEADER_SIZE);
+        this->curPackedMSGLocation = RTP_PAYLOAD_LENGTH+RTP_HEADER_LENGTH;
+        this->curMSGLocation = AvailabeBytesNum-1-IGTL_HEADER_SIZE;
         AvailabeBytesNum = RTP_PAYLOAD_LENGTH;
       }
     }
@@ -138,7 +139,7 @@ namespace igtl {
       memmove(packedMsg, (void *)(&rtpHdr), 4);
       memmove(packedMsg+4, (void *)(&this->fragmentTimeIncrement), 4);
       memmove(packedMsg+8, (void *)(&SSRC), 4); // SSRC needs to set by different devices, collision should be avoided.
-      curPackedMSGLocation += RTP_HEADER_LENGTH;
+      curPackedMSGLocation = RTP_HEADER_LENGTH;
       framentNumber++;
       if (totMsgLen <= (AvailabeBytesNum-1-IGTL_HEADER_SIZE))
       {
@@ -148,6 +149,7 @@ namespace igtl {
         memmove(packedMsg+curPackedMSGLocation, this->MSGHeader, IGTL_HEADER_SIZE);
         curPackedMSGLocation += IGTL_HEADER_SIZE;
         memmove(packedMsg + curPackedMSGLocation, (void *)(messageBody), totMsgLen);
+        this->curPackedMSGLocation += totMsgLen;
         // when it is packing the fragment, we want to sent the data ASAP, otherwize, we will wait for another message
         status = PaketReady;
       }
