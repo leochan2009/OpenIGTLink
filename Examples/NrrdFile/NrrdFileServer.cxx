@@ -109,74 +109,43 @@ int GetNrrdHeaderLength(const char* file) // the data could contain '\n' so the 
   std::string data("  ");
   int headerLength = 0;
   int temp = 1;
-  bool foundSemiComma = false;
   while(fread(&data[0],2,1,fp)){
     fseek(fp, -1, SEEK_CUR);
     temp ++;
-    if (strcmp(data.c_str(),": ")==0)
-    {
-      foundSemiComma = true;
-    }
-#if defined(_WIN32) || defined(__CYGWIN__)
-    if (strcmp(data.c_str(),"\r\n")==0 && foundSemiComma)
+    if (strcmp(data.c_str(),"\n\n")==0)
     {
       headerLength = temp;
-      foundSemiComma = false;
+      break;
     }
-    
-#else
-    const char datatemp = data.c_str()[0];
-    if (datatemp == '\n' && foundSemiComma)
-    {
-      headerLength = temp;
-      foundSemiComma = false;
-    }
-#endif
   }
   fclose(fp);
   fp = NULL;
   return headerLength;
 }
 
-int GetTagValue(char* headerString, int headerLenght, const char* tag, int tagLength, char* & tagValueString,int&tagValueLength)
+int GetTagValue(char* headerString, int headerLenght, const char* tag, int tagLength, std::string &tagValueString, int&tagValueLength)
 {
   int beginIndex = -1;
   int endIndex = -1;
   int index = 0;
   for(index = 0; index < headerLenght; index ++ )
   {
-    char *stringTemp = new char[tagLength];
     if (index < headerLenght -tagLength)
     {
-      memcpy(stringTemp ,&(headerString[index]), tagLength);
-      if(strcmp(stringTemp,tag)==0)
+      std::string stringTemp(&(headerString[index]), &(headerString[index + tagLength]));
+      if(strcmp(stringTemp.c_str(),tag)==0)
       {
         beginIndex = index+tagLength+2;
       }
     }
-#if defined(_WIN32) || defined(__CYGWIN__)
-    if (index < headerLenght - 1)
-    {
-      char *endChar = new char[2];
-      memcpy(endChar,&(headerString[index]), 2);
-      if(beginIndex>=0 && (strcmp(endChar, "\r\n") == 0))
-      {
-        endIndex = index;
-        break;
-      }
-    }
-#else
-    char *endChar = new char[1];
-    memcpy(endChar,&(headerString[index]), 1);
-    if(beginIndex>=0 && (strcmp(endChar, "\n") == 0))
+    std::string stringTemp2(&(headerString[index]), &(headerString[index + 1]));
+    if(beginIndex>=0 && (strcmp(stringTemp2.c_str(), "\n") == 0))
     {
       endIndex = index;
       break;
     }
-#endif
   }
-  tagValueString = new char[endIndex-beginIndex];
-  memcpy(tagValueString, &(headerString[beginIndex]), endIndex-beginIndex);
+  tagValueString = std::string(&(headerString[beginIndex]), &(headerString[endIndex]));
   return 1;
 }
 
@@ -221,22 +190,22 @@ int GetTestImage(igtl::ImageMessage::Pointer& imgMsg, const char* file)
   }
   char * headerString = new char[headerLength];
   fread(headerString, headerLength,1,fp);
-  char * tagValueString = NULL;
+  std::string tagValueString("");
   int tagValueLength;
   if(GetTagValue(headerString, headerLength, "type", 4, tagValueString, tagValueLength))
   {
-    if (strcmp(tagValueString, "short")==0)
+    if (strcmp(tagValueString.c_str(), "short")==0)
     {
       scalarType = igtl::ImageMessage::TYPE_UINT16;
     }
   }
   if(GetTagValue(headerString, headerLength, "space", 5, tagValueString, tagValueLength))
   {
-    if(strcmp(tagValueString, "left-posterior-superior")==0 || strcmp(tagValueString, "LPS")==0)
+    if(strcmp(tagValueString.c_str(), "left-posterior-superior")==0 || strcmp(tagValueString.c_str(), "LPS")==0)
     {
       imgMsg->SetCoordinateSystem(igtl::ImageMessage::COORDINATE_LPS);
     }
-    if(strcmp(tagValueString, "right-anterior-superior")==0 || strcmp(tagValueString, "RAS")==0)
+    if(strcmp(tagValueString.c_str(), "right-anterior-superior")==0 || strcmp(tagValueString.c_str(), "RAS")==0)
     {
       imgMsg->SetCoordinateSystem(igtl::ImageMessage::COORDINATE_RAS);
     }
@@ -287,11 +256,11 @@ int GetTestImage(igtl::ImageMessage::Pointer& imgMsg, const char* file)
   
   if(GetTagValue(headerString, headerLength, "endian", 6, tagValueString, tagValueLength))
   {
-    if(strcmp(tagValueString, "little")==0)
+    if(strcmp(tagValueString.c_str(), "little")==0)
     {
       imgMsg->SetEndian(igtl::ImageMessage::ENDIAN_LITTLE);
     }
-    if(strcmp(tagValueString, "big")==0)
+    if(strcmp(tagValueString.c_str(), "big")==0)
     {
       imgMsg->SetEndian(igtl::ImageMessage::ENDIAN_BIG);
     }
@@ -322,8 +291,6 @@ int GetTestImage(igtl::ImageMessage::Pointer& imgMsg, const char* file)
     return 1;
   }
   fclose(fp);
-
-  std::cerr << "done." << std::endl;
 
   return 0;
 }

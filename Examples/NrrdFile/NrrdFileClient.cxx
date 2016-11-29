@@ -161,13 +161,9 @@ int ReceiveImage(igtl::Socket * socket, igtl::MessageHeader::Pointer& header, ch
     << size[0] << ", " << size[1] << ", " << size[2] << ")" << std::endl;
     std::cerr << "Spacing               : ("
     << spacing[0] << ", " << spacing[1] << ", " << spacing[2] << ")" << std::endl;
-    FILE *fp = fopen(file, "wa");
+    FILE *fp = fopen(file, "wb");
     std::string lineBreak;
-#if defined(_WIN32) || defined(__CYGWIN__)
-    lineBreak = std::string("\r\n");
-#else
     lineBreak = std::string("\n");
-#endif
     
     std::string buffer("NRRD0004");
     buffer.append(lineBreak);
