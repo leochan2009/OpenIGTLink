@@ -19,11 +19,12 @@
 #include <math.h>
 #include <cstdlib>
 #include <cstring>
+#include <string>
 
 #include "igtlOSUtil.h"
 #include "igtlImageMessage.h"
 #include "igtlClientSocket.h"
-#include <string>
+#include "igtlutil/igtl_image.h"
 
 int ReceiveImage(igtl::Socket * socket, igtl::MessageHeader::Pointer& header, char*  file);
 
@@ -67,55 +68,50 @@ int main(int argc, char* argv[])
   // Allocate a time stamp
   igtl::TimeStamp::Pointer ts;
   ts = igtl::TimeStamp::New();
-  
-  
-  while (1)
+  //------------------------------------------------------------
+  // loop
+  for (int i = 0; i < 5; i ++)
   {
-    //------------------------------------------------------------
-    // loop
-    for (int i = 0; i < 5; i ++)
+    
+    // Initialize receive buffer
+    headerMsg->InitPack();
+    
+    // Receive generic header from the socket
+    int r = socket->Receive(headerMsg->GetPackPointer(), headerMsg->GetPackSize());
+    if (r == 0)
     {
-      
-      // Initialize receive buffer
-      headerMsg->InitPack();
-      
-      // Receive generic header from the socket
-      int r = socket->Receive(headerMsg->GetPackPointer(), headerMsg->GetPackSize());
-      if (r == 0)
-      {
-        socket->CloseSocket();
-        exit(0);
-      }
-      if (r != headerMsg->GetPackSize())
-      {
-        continue;
-      }
-      
-      // Deserialize the header
-      headerMsg->Unpack();
-      
-      // Get time stamp
-      igtlUint32 sec;
-      igtlUint32 nanosec;
-      
-      headerMsg->GetTimeStamp(ts);
-      ts->GetTimeStamp(&sec, &nanosec);
-      
-      std::cerr << "Time stamp: "
-      << sec << "." << std::setw(9) << std::setfill('0')
-      << nanosec << std::endl;
-      
-      if (strcmp(headerMsg->GetDeviceType(), "IMAGE") == 0)
-      {
-        char filename[128];
-        sprintf(filename, "%s/igtlTestImage%d.nrrd", dir, i+1);
-        ReceiveImage(socket, headerMsg, filename);
-      }
-      else
-      {
-        std::cerr << "Receiving : " << headerMsg->GetDeviceType() << std::endl;
-        socket->Skip(headerMsg->GetBodySizeToRead(), 0);
-      }
+      socket->CloseSocket();
+      exit(0);
+    }
+    if (r != headerMsg->GetPackSize())
+    {
+      continue;
+    }
+    
+    // Deserialize the header
+    headerMsg->Unpack();
+    
+    // Get time stamp
+    igtlUint32 sec;
+    igtlUint32 nanosec;
+    
+    headerMsg->GetTimeStamp(ts);
+    ts->GetTimeStamp(&sec, &nanosec);
+    
+    std::cerr << "Time stamp: "
+    << sec << "." << std::setw(9) << std::setfill('0')
+    << nanosec << std::endl;
+    
+    if (strcmp(headerMsg->GetDeviceType(), "IMAGE") == 0)
+    {
+      char filename[128];
+      sprintf(filename, "%s/igtlTestImage%d.nrrd", dir, i+1);
+      ReceiveImage(socket, headerMsg, filename);
+    }
+    else
+    {
+      std::cerr << "Receiving : " << headerMsg->GetDeviceType() << std::endl;
+      socket->Skip(headerMsg->GetBodySizeToRead(), 0);
     }
   }
   
@@ -165,7 +161,6 @@ int ReceiveImage(igtl::Socket * socket, igtl::MessageHeader::Pointer& header, ch
     << size[0] << ", " << size[1] << ", " << size[2] << ")" << std::endl;
     std::cerr << "Spacing               : ("
     << spacing[0] << ", " << spacing[1] << ", " << spacing[2] << ")" << std::endl;
-    
     FILE *fp = fopen(file, "wa");
     std::string lineBreak;
 #if defined(_WIN32) || defined(__CYGWIN__)
@@ -212,26 +207,29 @@ int ReceiveImage(igtl::Socket * socket, igtl::MessageHeader::Pointer& header, ch
     buffer.append(std::to_string(size[2]));
     buffer.append(lineBreak);
     fwrite (buffer.c_str(), 1, buffer.length(), fp);
-    
     buffer = std::string("space directions: (");
-    buffer.append(std::to_string(matrix[0][0]));
+    buffer.append(std::to_string(matrix[0][0]*spacing[0]));
     buffer.append(",");
-    buffer.append(std::to_string(matrix[0][1]));
+    buffer.append(std::to_string(matrix[0][1]*spacing[0]));
     buffer.append(",");
-    buffer.append(std::to_string(matrix[0][2]));
+    buffer.append(std::to_string(matrix[0][2]*spacing[0]));
     buffer.append(") (");
-    buffer.append(std::to_string(matrix[1][0]));
+    buffer.append(std::to_string(matrix[1][0]*spacing[1]));
     buffer.append(",");
-    buffer.append(std::to_string(matrix[1][1]));
+    buffer.append(std::to_string(matrix[1][1]*spacing[1]));
     buffer.append(",");
-    buffer.append(std::to_string(matrix[1][2]));
+    buffer.append(std::to_string(matrix[1][2]*spacing[1]));
     buffer.append(") (");
-    buffer.append(std::to_string(matrix[2][0]));
+    buffer.append(std::to_string(matrix[2][0]*spacing[2]));
     buffer.append(",");
-    buffer.append(std::to_string(matrix[2][1]));
+    buffer.append(std::to_string(matrix[2][1]*spacing[2]));
     buffer.append(",");
-    buffer.append(std::to_string(matrix[2][2]));
+    buffer.append(std::to_string(matrix[2][2]*spacing[2]));
     buffer.append(")");
+    buffer.append(lineBreak);
+    fwrite (buffer.c_str(), 1, buffer.length(), fp);
+    
+    buffer = std::string("kinds: domain domain domain");
     buffer.append(lineBreak);
     fwrite (buffer.c_str(), 1, buffer.length(), fp);
     
@@ -262,10 +260,9 @@ int ReceiveImage(igtl::Socket * socket, igtl::MessageHeader::Pointer& header, ch
     buffer.append(")");
     buffer.append(lineBreak);
     fwrite(buffer.c_str(), 1, buffer.length(), fp);
-    fwrite(lineBreak.c_str(), 1, buffer.length(), fp);
+    fwrite("\r", 1, 1, fp);
     int fsize = imgMsg->GetImageSize();
-    int b = fwrite(imgMsg->GetPackBodyPointer(), 1, fsize,fp);
-
+    int b = fwrite((unsigned char*)imgMsg->GetScalarPointer(), 1, fsize,fp);
     fclose(fp);
     fp = NULL;
     

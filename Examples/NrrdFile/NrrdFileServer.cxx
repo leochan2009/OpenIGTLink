@@ -187,7 +187,7 @@ std::string GetValueByDelimiter(std::string &inputString, std::string delimiter,
   int tokenIndex = 0;
   while ((pos = inputString.find(delimiter)) != std::string::npos) {
     token = inputString.substr(0, pos);
-    std::cout << token << std::endl;
+    //std::cout << token << std::endl;
     inputString.erase(0, pos + delimiter.length());
     tokenIndex++;
     if (tokenIndex == index)
@@ -257,31 +257,31 @@ int GetTestImage(igtl::ImageMessage::Pointer& imgMsg, const char* file)
     std::string stringTemp(tagValueString);
     std::string firstSpaceDirect = GetValueByDelimiter(stringTemp," ", 1);
     std::string temp = GetValueByDelimiter(firstSpaceDirect,"(", 1);// get rid of the "("
-    std::string x00 = GetValueByDelimiter(firstSpaceDirect,",",1);
-    std::string x10 = GetValueByDelimiter(firstSpaceDirect,",",1);
-    std::string x20 = GetValueByDelimiter(firstSpaceDirect,")",1);
+    float x00 = atof(GetValueByDelimiter(firstSpaceDirect,",",1).c_str());
+    float x10 = atof(GetValueByDelimiter(firstSpaceDirect,",",1).c_str());
+    float x20 = atof(GetValueByDelimiter(firstSpaceDirect,")",1).c_str());
     std::string secondSpaceDirect = GetValueByDelimiter(stringTemp," ", 1);
     temp = GetValueByDelimiter(secondSpaceDirect,"(", 1);// get rid of the "("
-    std::string x01 = GetValueByDelimiter(secondSpaceDirect,",",1);
-    std::string x11 = GetValueByDelimiter(secondSpaceDirect,",",1);
-    std::string x21 = GetValueByDelimiter(secondSpaceDirect,")",1);
+    float x01 = atof(GetValueByDelimiter(secondSpaceDirect,",",1).c_str());
+    float x11 = atof(GetValueByDelimiter(secondSpaceDirect,",",1).c_str());
+    float x21 = atof(GetValueByDelimiter(secondSpaceDirect,")",1).c_str());
     std::string thirdSpaceDirect = GetValueByDelimiter(stringTemp,")", 1);
     temp = GetValueByDelimiter(thirdSpaceDirect,"(", 1);// get rid of the "("
-    std::string x02 = GetValueByDelimiter(thirdSpaceDirect,",",1);
-    std::string x12 = GetValueByDelimiter(thirdSpaceDirect,",",1);
-    std::string x22 = thirdSpaceDirect;
-    spacing[0] = atof(x00.c_str());
-    spacing[1] = atof(x11.c_str());
-    spacing[2] = atof(x22.c_str());
-    matrix[0][0] = atof(x00.c_str());
-    matrix[0][1] = atof(x01.c_str());
-    matrix[0][2] = atof(x02.c_str());
-    matrix[1][0] = atof(x10.c_str());
-    matrix[1][1] = atof(x11.c_str());
-    matrix[1][2] = atof(x12.c_str());
-    matrix[2][0] = atof(x20.c_str());
-    matrix[2][1] = atof(x21.c_str());
-    matrix[2][2] = atof(x22.c_str());
+    float x02 = atof(GetValueByDelimiter(thirdSpaceDirect,",",1).c_str());
+    float x12 = atof(GetValueByDelimiter(thirdSpaceDirect,",",1).c_str());
+    float x22 = atof(thirdSpaceDirect.c_str());
+    spacing[0] = sqrt(x00*x00+x10*x10+x20*x20);
+    spacing[1] = sqrt(x01*x01+x11*x11+x21*x21);
+    spacing[2] = sqrt(x02*x02+x12*x12+x22*x22);
+    matrix[0][0] = x00/spacing[0];
+    matrix[0][1] = x01/spacing[0];
+    matrix[0][2] = x02/spacing[0];
+    matrix[1][0] = x10/spacing[1];
+    matrix[1][1] = x11/spacing[1];
+    matrix[1][2] = x12/spacing[1];
+    matrix[2][0] = x20/spacing[2];
+    matrix[2][1] = x21/spacing[2];
+    matrix[2][2] = x22/spacing[2];
     matrix[3][3] = 1.0;
   }
   
@@ -289,11 +289,11 @@ int GetTestImage(igtl::ImageMessage::Pointer& imgMsg, const char* file)
   {
     if(strcmp(tagValueString, "little")==0)
     {
-      imgMsg->SetCoordinateSystem(igtl::ImageMessage::ENDIAN_LITTLE);
+      imgMsg->SetEndian(igtl::ImageMessage::ENDIAN_LITTLE);
     }
     if(strcmp(tagValueString, "big")==0)
     {
-      imgMsg->SetCoordinateSystem(igtl::ImageMessage::ENDIAN_BIG);
+      imgMsg->SetEndian(igtl::ImageMessage::ENDIAN_BIG);
     }
   }
   if(GetTagValue(headerString, headerLength, "space origin", 12, tagValueString, tagValueLength))
