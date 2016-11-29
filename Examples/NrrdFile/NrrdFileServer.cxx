@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
       {
       //------------------------------------------------------------
       // loop
-      for (int i = 0; i < 100; i ++)
+      for (int i = 0; i < 5; i ++)
         {
         
         //------------------------------------------------------------
@@ -204,10 +204,8 @@ int GetTestImage(igtl::ImageMessage::Pointer& imgMsg, const char* file)
 {
   //------------------------------------------------------------
   // size parameters
-  int   size[]     = {256, 256, 1};       // image dimension
-  float spacing[]  = {1.0, 1.0, 5.0};     // spacing (mm/pixel)
-  int   svsize[]   = {256, 256, 1};       // sub-volume size
-  int   svoffset[] = {0, 0, 0};           // sub-volume offset
+  int   size[]     = {0, 0, 1};       // image dimension
+  float spacing[]  = {1.0, 1.0, 1.0};     // spacing (mm/pixel)
   int   scalarType = igtl::ImageMessage::TYPE_UINT8;// scalar type
   //------------------------------------------------------------
   // Get randome orientation matrix and set it.
@@ -284,6 +282,7 @@ int GetTestImage(igtl::ImageMessage::Pointer& imgMsg, const char* file)
     matrix[2][0] = atof(x20.c_str());
     matrix[2][1] = atof(x21.c_str());
     matrix[2][2] = atof(x22.c_str());
+    matrix[3][3] = 1.0;
   }
   
   if(GetTagValue(headerString, headerLength, "endian", 6, tagValueString, tagValueLength))
