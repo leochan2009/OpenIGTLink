@@ -25,9 +25,28 @@
 #include "igtlTrackingDataMessage.h"
 #include "igtlMessageRTPWrapper.h"
 #include "igtlUDPClientSocket.h"
+#include "igtlMultiThreader.h"
+#include "igtlConditionVariable.h"
+#include "igtlMutexLock.h"
+
+void* ThreadFunctionUnWrap(void* ptr);
+
+void* ThreadFunctionReadSocket(void* ptr);
+
+int ReceiveTrackingData(igtl::TrackingDataMessage::Pointer& msgData);
 
 
-int ReceiveTrackingData(igtl::MessageBase::Pointer& msgData);
+struct ReadSocketAndPush
+{
+  igtl::MessageRTPWrapper::Pointer wrapper;
+  igtl::UDPClientSocket::Pointer clientSocket;
+};
+
+struct Wrapper
+{
+  igtl::MessageRTPWrapper::Pointer wrapper;
+};
+
 
 int main(int argc, char* argv[])
 {
@@ -55,36 +74,86 @@ int main(int argc, char* argv[])
   igtl::UDPClientSocket::Pointer socket;
   socket = igtl::UDPClientSocket::New();
   socket->JoinNetwork("226.0.0.1", port, 1);
+  igtl::ConditionVariable::Pointer conditionVar = igtl::ConditionVariable::New();
+  igtl::SimpleMutexLock* glock = igtl::SimpleMutexLock::New();
   //socket->JoinNetwork("127.0.0.1", port, 0); // join the local network for a client connection
   igtl::MessageRTPWrapper::Pointer rtpWrapper = igtl::MessageRTPWrapper::New();
-  igtl::MessageBase::Pointer trackingMultiPKTMSG = igtl::MessageBase::New();
+  //std::vector<ReorderBuffer> reorderBufferVec(10, ReorderBuffer();
+  //int loop = 0;
+  ReadSocketAndPush info;
+  info.wrapper = rtpWrapper;
+  info.clientSocket = socket;
+  
+  Wrapper infoWrapper;
+  infoWrapper.wrapper = rtpWrapper;
+  
+  igtl::MultiThreader::Pointer threader = igtl::MultiThreader::New();
+  
+  threader->SpawnThread((igtl::ThreadFunctionType)&ThreadFunctionReadSocket, &info);
+  threader->SpawnThread((igtl::ThreadFunctionType)&ThreadFunctionUnWrap, &infoWrapper);
+  while(1)
+  {
+    if(rtpWrapper->unWrappedMessages.size())// to do: glock this session
+    {
+      igtl::TrackingDataMessage::Pointer trackingMultiPKTMSG = igtl::TrackingDataMessage::New();
+      trackingMultiPKTMSG->SetHeaderVersion(IGTL_HEADER_VERSION_2);
+      std::map<igtl_uint32, igtl::UnWrappedMessage*>::iterator it = rtpWrapper->unWrappedMessages.begin();
+      igtl::MessageHeader::Pointer header = igtl::MessageHeader::New();
+      header->InitPack();
+      memcpy(header->GetPackPointer(), it->second->messagePackPointer, IGTL_HEADER_SIZE);
+      header->Unpack();
+      trackingMultiPKTMSG->SetMessageHeader(header);
+      trackingMultiPKTMSG->AllocateBuffer();
+      if (it->second->messageDataLength == trackingMultiPKTMSG->GetPackSize())
+      {
+        memcpy(trackingMultiPKTMSG->GetPackPointer(), it->second->messagePackPointer, it->second->messageDataLength);
+        ReceiveTrackingData(trackingMultiPKTMSG);
+      }
+      rtpWrapper->unWrappedMessages.erase(it);
+    }
+  }
+}
+
+void* ThreadFunctionUnWrap(void* ptr)
+{
+  // Get thread information
+  igtl::MultiThreader::ThreadInfo* info =
+  static_cast<igtl::MultiThreader::ThreadInfo*>(ptr);
   const char *trackingDeviceName = "Tracker";
   const char *deviceType = "TDATA";
-  trackingMultiPKTMSG->SetHeaderVersion(IGTL_HEADER_VERSION_2);
-  //std::vector<ReorderBuffer> reorderBufferVec(10, ReorderBuffer();
-  int loop = 0;
-  unsigned char UDPPaket[RTP_PAYLOAD_LENGTH+RTP_HEADER_LENGTH];
-  for (loop = 0; loop<100; loop++)
+  Wrapper parentObj = *(static_cast<Wrapper*>(info->UserData));
+  while(1)
   {
-    int totMsgLen = socket->ReadSocket(UDPPaket, RTP_PAYLOAD_LENGTH+RTP_HEADER_LENGTH);
-    if (totMsgLen>0)
-    {
-      rtpWrapper->UnWrapMessageWithTypeAndName(UDPPaket, totMsgLen, trackingMultiPKTMSG, deviceType, trackingDeviceName);
-      if (rtpWrapper->GetRTPWrapperStatus()==igtl::MessageRTPWrapper::MessageReady)
-        ReceiveTrackingData(trackingMultiPKTMSG);
-    }//igtl::Sleep(interval);
+    parentObj.wrapper->UnWrapPaketWithTypeAndName(deviceType, trackingDeviceName);
+    igtl::Sleep(5);
   }
 }
 
 
-int ReceiveTrackingData(igtl::MessageBase::Pointer& msgData)
+void* ThreadFunctionReadSocket(void* ptr)
+{
+  // Get thread information
+  igtl::MultiThreader::ThreadInfo* info =
+  static_cast<igtl::MultiThreader::ThreadInfo*>(ptr);
+  
+  ReadSocketAndPush parentObj = *(static_cast<ReadSocketAndPush*>(info->UserData));
+  unsigned char UDPPaket[RTP_PAYLOAD_LENGTH+RTP_HEADER_LENGTH];
+  const char *trackingDeviceName = "Tracker";
+  const char *deviceType = "TDATA";
+  while(1)
+  {
+    int totMsgLen = parentObj.clientSocket->ReadSocket(UDPPaket, RTP_PAYLOAD_LENGTH+RTP_HEADER_LENGTH);
+    if (totMsgLen>0)
+    {
+      parentObj.wrapper->PushDataIntoPaketBuffer(UDPPaket, totMsgLen);
+    }
+  }
+}
+
+int ReceiveTrackingData(igtl::TrackingDataMessage::Pointer& trackingMSG)
 {
   // Deserialize the transform data
   // If you want to skip CRC check, call Unpack() without argument.
-  igtl::TrackingDataMessage::Pointer trackingMSG = igtl::TrackingDataMessage::New();
-  //memcpy(trackingMSG->GetPackPointer(), msgData->GetPackPointer(), msgData->GetPackSize());
-  trackingMSG->SetHeaderVersion(IGTL_HEADER_VERSION_2);
-  trackingMSG->Copy(msgData);
   int c = trackingMSG->Unpack(0); // to do crc check fails, fix the error
 
   if (c & igtl::MessageHeader::UNPACK_BODY) // if CRC check is OK

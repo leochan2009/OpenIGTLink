@@ -37,6 +37,16 @@
 namespace igtl
 {
   
+  class PaketBuffer {
+  public:
+    PaketBuffer(){iPaketCount = 0; pPaketLengthInByte.reserve(100); totalLength= 0; pBsBuf.reserve(100);};
+    int   iPaketCount;              ///< count number of NAL coded already
+    std::vector<int>  pPaketLengthInByte;       ///< length of NAL size in byte from 0 to iNalCount-1
+    std::vector<unsigned char> pBsBuf;       ///< buffer of Paket contained
+    int totalLength;
+  };
+  
+  
 class IGTLCommon_EXPORT MessageRTPWrapper: public Object
 {
 public:
@@ -74,7 +84,9 @@ public:
   
   int WrapMessageAndSend(igtl::UDPServerSocket::Pointer &socket, igtl_uint8* messagePackPointer, int msgtotalLen);
   
-  int UnWrapMessageWithTypeAndName(igtlUint8 * UDPPaket, igtlUint16 totMsgLen, igtl::MessageBase::Pointer & MSGPointer, const char *deviceType, const char * deviceName);
+  int PushDataIntoPaketBuffer(igtlUint8* UDPPaket, igtlUint16 paketLen);
+  
+  int UnWrapPaketWithTypeAndName(const char *deviceType, const char * deviceName);
   
   igtl::MessageBase::Pointer UnWrapMessage(igtl_uint8* messageContent, int totMsgLen);
   
@@ -97,6 +109,8 @@ public:
   int GetPackedMSGLocation(){return this->curPackedMSGLocation;};
   
   int GetRTPWrapperStatus(){return status;};
+  
+  std::map<igtl_uint32, igtl::UnWrappedMessage*> unWrappedMessages;
   
 protected:
   MessageRTPWrapper();
@@ -126,8 +140,9 @@ private:
   igtl_uint32 CSRC;
   igtl_uint32 fragmentTimeIncrement;
   igtl::MutexLock::Pointer glock;
-  igtl::ReorderBuffer* reorderBuffer;
-  
+  igtl::ReorderBuffer reorderBuffer;
+  std::map<igtl_uint32, igtl::ReorderBuffer*> reorderBufferMap;
+  PaketBuffer incommingPakets;
 };
 
 

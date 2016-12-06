@@ -85,6 +85,7 @@ int SendTrackingData(igtl::UDPServerSocket::Pointer &socket, igtl::MessageRTPWra
   static float theta1 = 0.0;
   static float phi2   = 0.0;
   static float theta2 = 0.0;
+  static igtlUint32 messageID = 0;
   
   igtl::TrackingDataMessage::Pointer trackingMsg;
   trackingMsg = igtl::TrackingDataMessage::New();
@@ -127,7 +128,9 @@ int SendTrackingData(igtl::UDPServerSocket::Pointer &socket, igtl::MessageRTPWra
   trackingMsg->GetTrackingDataElement(2, ptr);
   GetRandomTestMatrix(matrix, phi2, theta2);
   ptr->SetMatrix(matrix);
-
+  
+  trackingMsg->SetMessageID(messageID);
+  messageID ++;
   trackingMsg->Pack();
   rtpWrapper->SetSSRC(1);
   int status = igtl::MessageRTPWrapper::PaketReady;
