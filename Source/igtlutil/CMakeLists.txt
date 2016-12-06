@@ -72,10 +72,12 @@ if (${OpenIGTLink_PROTOCOL_VERSION} GREATER "2")
   SET(igtlutil_HEADS
     ${igtlutil_HEADS}
     igtl_command.h
+    igtl_video.h
     )
   SET(igtlutil_SOURCES
     ${igtlutil_SOURCES}
     igtl_command.c
+    igtl_video.c
     )
 endif (${OpenIGTLink_PROTOCOL_VERSION} GREATER "2")
 
