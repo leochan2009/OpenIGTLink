@@ -72,7 +72,7 @@ public:
   /// Gets the number of fragments to be sent for the packed (serialized) data. Returns numberOfDataFragToSent
   int GetNumberODataFragToSent() { return numberOfDataFragToSent;  /* the data for transmission is too big for UDP transmission, so the data will be transmitted by multiple packets*/ };
   
-  int WrapMessageAndSend(igtl::UDPServerSocket::Pointer &socket, igtl_uint8* messageContent, int bodyMsgLen);
+  int WrapMessageAndSend(igtl::UDPServerSocket::Pointer &socket, igtl_uint8* messagePackPointer, int msgtotalLen);
   
   int UnWrapMessageWithTypeAndName(igtlUint8 * UDPPaket, igtlUint16 totMsgLen, igtl::MessageBase::Pointer & MSGPointer, const char *deviceType, const char * deviceName);
   

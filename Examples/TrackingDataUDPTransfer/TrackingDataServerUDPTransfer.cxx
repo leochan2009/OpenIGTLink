@@ -131,10 +131,7 @@ int SendTrackingData(igtl::UDPServerSocket::Pointer &socket, igtl::MessageRTPWra
   trackingMsg->Pack();
   rtpWrapper->SetSSRC(1);
   int status = igtl::MessageRTPWrapper::PaketReady;
-  igtl_uint8* messagePointer = (igtl_uint8*)trackingMsg->GetPackBodyPointer()+sizeof(igtl_extended_header);
-  rtpWrapper->SetMSGHeader((igtl_uint8*)trackingMsg->GetPackPointer());
-  int MSGContentLength = trackingMsg->GetPackBodySize()-sizeof(igtl_extended_header); // this is the m_content size + meta data size
-  status = rtpWrapper->WrapMessageAndSend(socket, messagePointer, MSGContentLength);
+  status = rtpWrapper->WrapMessageAndSend(socket, (unsigned char*)trackingMsg->GetPackPointer(), trackingMsg->GetPackSize());
   //------------------------------------------------------------
   
   igtl::Sleep(2000);

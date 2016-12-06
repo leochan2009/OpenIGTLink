@@ -178,10 +178,13 @@ namespace igtl {
     return 1;
   }
   
-  int MessageRTPWrapper::WrapMessageAndSend(igtl::UDPServerSocket::Pointer &socket, igtl_uint8* messageContent, int bodyMsgLen)
+  int MessageRTPWrapper::WrapMessageAndSend(igtl::UDPServerSocket::Pointer &socket, igtl_uint8* messagePackPointer, int msgtotalLen)
   {
-    int leftMsgLen = bodyMsgLen;
-    igtl_uint8* leftmessageContent = messageContent;
+    igtl_uint8* messageContentPointer = messagePackPointer+IGTL_HEADER_SIZE+sizeof(igtl_extended_header);
+    this->SetMSGHeader((igtl_uint8*)messagePackPointer);
+    int MSGContentLength = msgtotalLen- IGTL_HEADER_SIZE-sizeof(igtl_extended_header); // this is the m_content size + meta data size
+    int leftMsgLen = MSGContentLength;
+    igtl_uint8* leftmessageContent = messageContentPointer;
     do
     {
       status = this->WrapMessage(leftmessageContent, leftMsgLen);
@@ -190,8 +193,8 @@ namespace igtl {
         this->glock->Lock();
         socket->WriteSocket(this->GetPackPointer(), this->GetPackedMSGLocation());
         this->glock->Unlock();
-        leftmessageContent = messageContent + this->GetCurMSGLocation();
-        leftMsgLen = bodyMsgLen - this->GetCurMSGLocation();
+        leftmessageContent = messageContentPointer + this->GetCurMSGLocation();
+        leftMsgLen = MSGContentLength - this->GetCurMSGLocation();
       }
     }while(status!=igtl::MessageRTPWrapper::PaketReady); // to do when bodyMsgLen
     return 1;
