@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
   igtl::MessageRTPWrapper::Pointer rtpWrapper = igtl::MessageRTPWrapper::New();
   //------------------------------------------------------------
   // loop
-  for (int i = 0;i<100;i++)
+  while (1)
   {
     SendTrackingData(serverSocket, rtpWrapper);
   }
@@ -137,7 +137,7 @@ int SendTrackingData(igtl::UDPServerSocket::Pointer &socket, igtl::MessageRTPWra
   status = rtpWrapper->WrapMessageAndSend(socket, (unsigned char*)trackingMsg->GetPackPointer(), trackingMsg->GetPackSize());
   //------------------------------------------------------------
   
-  igtl::Sleep(2000);
+  igtl::Sleep(100);
   std::cerr<<"Send"<<std::endl;
   phi0 += 0.1;
   phi1 += 0.2;

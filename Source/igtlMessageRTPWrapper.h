@@ -40,6 +40,7 @@ namespace igtl
   class PaketBuffer {
   public:
     PaketBuffer(){iPaketCount = 0; pPaketLengthInByte.reserve(100); totalLength= 0; pBsBuf.reserve(100);};
+    ~PaketBuffer(){pPaketLengthInByte.clear();pBsBuf.clear();};
     int   iPaketCount;              ///< count number of NAL coded already
     std::vector<int>  pPaketLengthInByte;       ///< length of NAL size in byte from 0 to iNalCount-1
     std::vector<unsigned char> pBsBuf;       ///< buffer of Paket contained
@@ -139,8 +140,8 @@ private:
   igtl_uint32 SSRC;
   igtl_uint32 CSRC;
   igtl_uint32 fragmentTimeIncrement;
-  igtl::MutexLock::Pointer glock;
-  igtl::ReorderBuffer reorderBuffer;
+  igtl::SimpleMutexLock* glock;
+  igtl::ReorderBuffer* reorderBuffer;
   std::map<igtl_uint32, igtl::ReorderBuffer*> reorderBufferMap;
   PaketBuffer incommingPakets;
 };
