@@ -236,7 +236,7 @@ public:
   virtual void  SetScalarPointer(unsigned char * p);
 
   /// Gets a pointer to the scalar data (for fragmented pack support).
-  void* GetPackPointer();
+  void* GetPackPointer(){return GetBufferPointer();};
 
   /// Gets the number of fragments for the packed (serialized) data. Returns 3
   /// consisting of header, image header and image body. (for fragmented pack support)

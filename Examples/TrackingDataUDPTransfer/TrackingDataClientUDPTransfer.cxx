@@ -110,6 +110,7 @@ int main(int argc, char* argv[])
         ReceiveTrackingData(trackingMultiPKTMSG);
       }
       rtpWrapper->unWrappedMessages.erase(it);
+      delete it->second;
     }
   }
 }

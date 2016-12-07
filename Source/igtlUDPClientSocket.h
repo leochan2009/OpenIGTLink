@@ -38,34 +38,6 @@ namespace igtl
 {
 
 class UDPServerSocket;
-
-  
-class ReorderBuffer
-{
-public:
-  ReorderBuffer(){firstPaketLen=0;lastPaketLen=0;filledPaketNum=0; totFragNumber = 0;receivedLastFrag=false;receivedFirstFrag=false;};
-  ReorderBuffer(ReorderBuffer const &anotherBuffer){firstPaketLen=anotherBuffer.firstPaketLen;lastPaketLen=anotherBuffer.lastPaketLen;filledPaketNum=anotherBuffer.filledPaketNum;receivedLastFrag=anotherBuffer.receivedLastFrag;receivedFirstFrag=anotherBuffer.receivedFirstFrag;};
-  ~ReorderBuffer(){};
-  unsigned char buffer[RTP_PAYLOAD_LENGTH*(16384-2)];  // we use 14 bits for fragment number, 2^14 = 16384. maximum
-  unsigned char firstFragBuffer[RTP_PAYLOAD_LENGTH];
-  unsigned char lastFragBuffer[RTP_PAYLOAD_LENGTH];
-  uint32_t firstPaketLen;
-  uint32_t lastPaketLen;
-  uint32_t filledPaketNum;
-  uint32_t totFragNumber;
-  bool receivedLastFrag;
-  bool receivedFirstFrag;
-};
-  
-  class UnWrappedMessage
-  {
-  public:
-    UnWrappedMessage(){};
-    UnWrappedMessage(UnWrappedMessage const &anotherMessage){};
-    ~UnWrappedMessage(){};
-    unsigned char messagePackPointer[RTP_PAYLOAD_LENGTH*(16384-2)];  // we use 14 bits for fragment number, 2^14 = 16384. maximum
-    uint32_t messageDataLength;
-  };
   
 class IGTLCommon_EXPORT UDPClientSocket : public GeneralSocket
 {

@@ -185,6 +185,7 @@ namespace igtl {
             unWrappedMessages.insert(std::pair<igtl_uint32, igtl::UnWrappedMessage*>(it->first,message));
             glock->Unlock();
             this->reorderBufferMap.erase(it);
+            delete it->second;
             status = MessageReady;
           }
           curPackedMSGLocation += header->GetBodySizeToRead()+IGTL_HEADER_SIZE;
@@ -229,6 +230,7 @@ namespace igtl {
               unWrappedMessages.insert(std::pair<igtl_uint32, igtl::UnWrappedMessage*>(it->first,message));
               glock->Unlock();
               this->reorderBufferMap.erase(it);
+              delete it->second;
               status = MessageReady;
             }
           }
