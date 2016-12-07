@@ -89,7 +89,7 @@ VideoMessage::VideoMessage():
 
 VideoMessage::~VideoMessage()
 {
-  if (this->m_FrameHeader && this->m_FrameHeader!= this->m_Body)
+  /*if (this->m_FrameHeader)
     {
     delete [] this->m_FrameHeader;
     }
@@ -100,7 +100,7 @@ VideoMessage::~VideoMessage()
   if(this->m_Body)
   {
     delete [] this->m_Body;
-  }
+  }*/
 }
 
 void VideoMessage::AllocateScalars()
@@ -115,6 +115,45 @@ void VideoMessage::AllocateScalars()
   this->m_FrameHeader = m_Body;
   this->m_Frame  = &m_FrameHeader[IGTL_VIDEO_HEADER_SIZE];
   //this->m_Frame = new unsigned char [s];
+}
+
+  
+void VideoMessage::AllocateBuffer()
+{
+  MessageBase::AllocateBuffer();
+#if OpenIGTLink_HEADER_VERSION >= 2
+  if (m_HeaderVersion == IGTL_HEADER_VERSION_2)
+  {
+    this->m_FrameHeader = &m_Body[sizeof(igtl_extended_header)];
+  }
+  else
+  {
+    this->m_FrameHeader = m_Body;
+  }
+  this->m_Frame  = &m_FrameHeader[IGTL_VIDEO_HEADER_SIZE];
+#else
+  this->m_FrameHeader = m_Body;
+  this->m_Frame = m_Body;
+#endif
+}
+  
+  
+int VideoMessage::CalculateContentBufferSize()
+{
+#if OpenIGTLink_HEADER_VERSION >= 2
+  int message_size(-1);
+  if (m_HeaderVersion == IGTL_HEADER_VERSION_2)
+  {
+    message_size =  bitStreamSize + IGTL_VIDEO_HEADER_SIZE + sizeof(igtl_extended_header) + GetMetaDataHeaderSize() + GetMetaDataSize();
+  }
+  else
+  {
+    message_size =  IGTL_VIDEO_HEADER_SIZE + bitStreamSize;
+  }
+#else
+  int message_size =  bitStreamSize;
+#endif
+  return message_size;
 }
 
 
@@ -176,7 +215,20 @@ int VideoMessage::GetBodyPackSize()
   // This function is called by:
   //   MessageBase::Pack()
   //   MessageBase::AllocatePack()
-  return GetBitStreamSize()+IGTL_VIDEO_HEADER_SIZE;
+#if OpenIGTLink_HEADER_VERSION >= 2
+  int size(-1);
+  if (m_HeaderVersion == IGTL_HEADER_VERSION_2)
+  {
+    size =  IGTL_VIDEO_HEADER_SIZE + bitStreamSize + sizeof(igtl_extended_header) + GetMetaDataHeaderSize() + GetMetaDataSize();
+  }
+  else
+  {
+    size =  IGTL_VIDEO_HEADER_SIZE + bitStreamSize;
+  }
+#else
+  int size = IGTL_HEADER_SIZE + bitStreamSize;
+#endif
+  return size;
 }
 
 int VideoMessage::PackBody()

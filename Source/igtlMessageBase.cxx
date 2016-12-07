@@ -245,7 +245,7 @@ bool MessageBase::PackExtendedHeader()
       AllocateBuffer(0);
     }
 
-    igtl_extended_header* extended_header   = (igtl_extended_header*) m_ExtendedHeader;
+    igtl_extended_header* extended_header   = (igtl_extended_header*) m_Body; // The m_extendedBody get byte converted. however, m_Body is still not byte converted.
     extended_header->extended_header_size   = sizeof(igtl_extended_header);
     extended_header->meta_data_header_size  = this->GetMetaDataHeaderSize();
     extended_header->meta_data_size         = this->GetMetaDataSize();

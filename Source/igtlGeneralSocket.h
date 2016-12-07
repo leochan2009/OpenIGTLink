@@ -69,7 +69,7 @@
 
 
 #define RTP_HEADER_LENGTH 12
-#define RTP_PAYLOAD_LENGTH 200 //ypical Ethernet MTU is 1500 bytes, minus 12 byte RTP and 32 byte IP address
+#define RTP_PAYLOAD_LENGTH 1500 //ypical Ethernet MTU is 1500 bytes, minus 12 byte RTP and 32 byte IP address
 #define MinimumPaketSpace RTP_PAYLOAD_LENGTH/3
 
 namespace igtl

@@ -229,6 +229,10 @@ public:
   /// create a single pack memroy degrading the performance.
   virtual void  AllocateScalars();
 
+  virtual int CalculateContentBufferSize();
+  
+  virtual void AllocateBuffer();
+  
   /// Gets a pointer to the scalar data.
   virtual void* GetScalarPointer();
 
