@@ -261,8 +261,6 @@ namespace igtl {
       {
         this->glock->Lock();
         socket->WriteSocket(this->GetPackPointer(), this->GetPackedMSGLocation());
-        for(int i=78;i<84;i++)
-          std::cerr<<*(this->GetPackPointer()+i)<<std::endl;
         this->glock->Unlock();
       }
       leftmessageContent = messageContentPointer + this->GetCurMSGLocation();
