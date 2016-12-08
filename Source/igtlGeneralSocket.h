@@ -46,27 +46,8 @@
 #include "igtlWin32Header.h"
 #include "igtl_types.h"
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
-#include <windows.h>
-#include <winsock2.h>
-#include <Ws2tcpip.h>
-#else
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <unistd.h>
-#include <sys/time.h>
-#endif
-#if defined(_WIN32) && !defined(__CYGWIN__)
-#define IPAddressStrLen 16
+#define IP4AddressStrLen 16
 #define IP6AddressStrLen 46
-#else
-#define IPAddressStrLen INET_ADDRSTRLEN
-#endif
-
 
 #define RTP_HEADER_LENGTH 12
 #define RTP_PAYLOAD_LENGTH 200 //ypical Ethernet MTU is 1500 bytes, minus 12 byte RTP and 32 byte IP address
@@ -176,7 +157,11 @@ namespace igtl
     
     /// Creates an endpoint for communication and returns the descriptor.
     /// -1 indicates error.
-    int CreateUDPSocket();
+    int CreateUDPServerSocket();
+
+    /// Creates an endpoint for communication and returns the descriptor.
+    /// -1 indicates error.
+    int CreateUDPClientSocket();
     
     /// Close the socket.
     void CloseSocket(int socketdescriptor);
@@ -209,6 +194,8 @@ namespace igtl
     /// selected_index
     static int SelectSockets(const int* sockets_to_select, int size,
                              unsigned long msec, int* selected_index);
+
+    void SetJoinGroup(bool value) { this->joinGroup = value; };
     
   private:
     GeneralSocket(const GeneralSocket&); // Not implemented.
@@ -229,7 +216,9 @@ namespace igtl
     int m_ReceiveTimeoutFlag;
     
     short PortNum;
-    char IPAddress[IPAddressStrLen];
+    char IPAddress[IP4AddressStrLen];
+
+    bool joinGroup;
     
   };
   

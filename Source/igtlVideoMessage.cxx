@@ -28,11 +28,16 @@ int StartVideoDataMessage::GetBodyPackSize()
   return IGTL_STT_VIDEO_SIZE;
 }
 
-int StartVideoDataMessage::PackBody()
+int StartVideoDataMessage::CalculateContentBufferSize()
+{
+  return IGTL_STT_VIDEO_SIZE;
+}
+  
+int StartVideoDataMessage::PackContent()
 {
   AllocatePack();
   
-  igtl_stt_video* stt_video = (igtl_stt_video*)this->m_Body;
+  igtl_stt_video* stt_video = (igtl_stt_video*)this->m_Content;
   strncpy(stt_video->codec, this->m_CodecType.c_str(), IGTL_VIDEO_CODEC_NAME_SIZE);
   stt_video->time_interval = this->m_TimeInterval;
   stt_video->useCompress = this->m_UseCompress;
@@ -44,9 +49,9 @@ int StartVideoDataMessage::PackBody()
 }
 
 
-int StartVideoDataMessage::UnpackBody()
+int StartVideoDataMessage::UnpackContent()
 {
-  igtl_stt_video* stt_video = (igtl_stt_video*)this->m_Body;
+  igtl_stt_video* stt_video = (igtl_stt_video*)this->m_Content;
   
   igtl_stt_video_convert_byte_order(stt_video);
   

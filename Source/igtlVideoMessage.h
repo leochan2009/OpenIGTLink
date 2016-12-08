@@ -63,10 +63,13 @@ protected:
   };
   ~StartVideoDataMessage();
   
+  /// Gets the size of the serialized content.
+  virtual int  CalculateContentBufferSize();
+  
 protected:
   virtual int  GetBodyPackSize();
-  virtual int  PackBody();
-  virtual int  UnpackBody();
+  virtual int  PackContent();
+  virtual int  UnpackContent();
   
 protected:
   
@@ -289,14 +292,14 @@ protected:
 protected:
 
   virtual int  GetBodyPackSize();
-
-public:  
+  
   /// Pack() serializes the header and body based on the member variables.
   /// PackBody() must be implemented in the child class. (for fragmented pack support)
-
   virtual int  PackContent();
   virtual int  UnpackContent();
 
+public:  
+  
   /// Allocate memory specifying the body size
   /// (used when create a brank package to receive data) (for fragmented pack support)
   virtual void AllocatePack(int bodySize);

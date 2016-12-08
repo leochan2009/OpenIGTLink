@@ -30,6 +30,21 @@
 #include <string.h>
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
+#include <winsock2.h>
+#include <Ws2tcpip.h>
+#include <windows.h>
+#else
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <unistd.h>
+#include <sys/time.h>
+#endif
+
+#if defined(_WIN32) && !defined(__CYGWIN__)
 #define WSA_VERSION MAKEWORD(1,1)
 #define igtlCloseSocketMacro(sock) (closesocket(sock))
 #else
@@ -88,7 +103,7 @@ namespace igtl
   
   
   //-----------------------------------------------------------------------------
-  int GeneralSocket::CreateUDPSocket()
+  int GeneralSocket::CreateUDPServerSocket()
   {
 #if defined(_WIN32) && !defined(__CYGWIN__)
     // Declare variables
@@ -106,11 +121,72 @@ namespace igtl
     }
 #endif
     int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    const igtl_uint8 loop = 1; //enable loop back to the host, mainly for debug purpose
+    if (setsockopt(sock, IPPROTO_IP, IP_MULTICAST_LOOP,
+      (const char*)&loop, sizeof loop) < 0) {
+      CloseSocket(sock);
+      return -1;
+    }
 
+    struct in_addr addr;
+    addr.s_addr = INADDR_ANY; // the address could be others
+#if defined (_WIN32)
+    if (setsockopt(sock, IPPROTO_IP, IP_MULTICAST_IF, (const char*)&addr, sizeof addr) < 0) {
+      CloseSocket(sock);
+      return -1;
+  }
+#else
+    if (setsockopt(this->m_SocketDescriptor, IPPROTO_IP, IP_MULTICAST_IF, &addr, sizeof addr) < 0) {
+      CloseSocket(this->m_SocketDescriptor);
+      return -1;
+    }
+#endif
+
+    //If not otherwise specified, multicast datagrams are sent with a default value of 1, to prevent them to be forwarded beyond the local network. To change the TTL to the value you desire (from 0 to 255), put that value into a variable (here I name it "ttl") and write somewhere in your program:
+#if defined (_WIN32)
+#define TTL_TYPE const char
+#else
+#define TTL_TYPE igtl_uint8
+#endif
+    TTL_TYPE ttl = 64;
+    if (setsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl))<0)
+    {
+      CloseSocket(sock);
+      return -1;
+    }
+    /*if ( this->BindSocket(this->m_SocketDescriptor, port) != 0)
+    {
+    // failed to bind or listen.
+    this->CloseSocket(this->m_SocketDescriptor);
+    this->m_SocketDescriptor = -1;
+    return -1;
+    }*/ // Bind socket in the server would conflict the binding in the client.
+    // Success.
     return sock;
   }
   
-  
+  int GeneralSocket::CreateUDPClientSocket()
+  {
+    if (BindSocket(this->m_SocketDescriptor, this->PortNum) == 0);
+    {
+      /*With UDP, you have to bind() the socket in the client because UDP is connectionless, so there is no other way for the stack to know which program to deliver datagrams to for a particular port.
+
+      If you could recvfrom() without bind(), you'd essentially be asking the stack to give your program all UDP datagrams sent to that computer. Since the stack delivers datagrams to only one program, this would break DNS, Windows' Network Neighborhood, network time sync....*/
+      if (this->joinGroup)
+      {
+        struct ip_mreq imreq;
+        imreq.imr_multiaddr.s_addr = inet_addr(this->IPAddress);
+        imreq.imr_interface.s_addr = INADDR_ANY; // use DEFAULT interface
+                                                 // JOIN multicast group on default interface
+        if (setsockopt(this->m_SocketDescriptor, IPPROTO_IP, IP_ADD_MEMBERSHIP,
+          (const char *)&imreq, sizeof(struct ip_mreq)) == 0) // windows use (const char*), unix like system use (const void*)
+        {
+          return this->m_SocketDescriptor;
+        }
+      }
+    }
+  }
+
   //-----------------------------------------------------------------------------
   int GeneralSocket::BindSocket(int socketdescriptor, int port)
   {

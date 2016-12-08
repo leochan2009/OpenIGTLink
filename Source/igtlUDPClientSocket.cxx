@@ -43,29 +43,11 @@ UDPClientSocket::~UDPClientSocket()
   
 int UDPClientSocket::JoinNetwork(const char* groupIPAddr, int portNum, bool joinGroup)
 {
-  this->m_SocketDescriptor = this->CreateUDPSocket();
   this->SetIPAddress(groupIPAddr);
-  this->SetPortNumber(portNum);
-  if(BindSocket(this->m_SocketDescriptor, portNum)==0);
-  {
-  /*With UDP, you have to bind() the socket in the client because UDP is connectionless, so there is no other way for the stack to know which program to deliver datagrams to for a particular port.
-  
-  If you could recvfrom() without bind(), you'd essentially be asking the stack to give your program all UDP datagrams sent to that computer. Since the stack delivers datagrams to only one program, this would break DNS, Windows' Network Neighborhood, network time sync....*/
-    if (joinGroup)
-    {
-      struct ip_mreq imreq;
-      imreq.imr_multiaddr.s_addr = inet_addr(groupIPAddr);
-      imreq.imr_interface.s_addr = INADDR_ANY; // use DEFAULT interface
-      // JOIN multicast group on default interface
-      if(setsockopt(this->m_SocketDescriptor, IPPROTO_IP, IP_ADD_MEMBERSHIP,
-                          (const char *)&imreq, sizeof(struct ip_mreq))==0) // windows use (const char*), unix like system use (const void*)
-      {
-        return this->m_SocketDescriptor;
-      }
-    }
-  }
-  
-  return -1;
+  this->SetPortNumber(portNum);  
+  this->m_SocketDescriptor = this->CreateUDPClientSocket();
+  this->SetJoinGroup(joinGroup);
+  return this->m_SocketDescriptor;
 }
 
 //-----------------------------------------------------------------------------

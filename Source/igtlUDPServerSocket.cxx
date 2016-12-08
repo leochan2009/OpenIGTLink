@@ -27,6 +27,21 @@
 =========================================================================*/
 #include "igtlUDPServerSocket.h"
 
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#include <winsock2.h>
+#include <Ws2tcpip.h>
+#include <windows.h>
+#else
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <unistd.h>
+#include <sys/time.h>
+#endif
+
 namespace igtl
 {
 
@@ -132,49 +147,11 @@ int UDPServerSocket::CreateUDPServer(int port)
     this->CloseSocket(this->m_SocketDescriptor);
     this->m_SocketDescriptor = -1;
   }
-  this->m_SocketDescriptor = this->CreateUDPSocket();
+  this->m_SocketDescriptor = this->CreateUDPServerSocket();
   if (this->m_SocketDescriptor < 0)
   {
     return -1;
   }
-  const igtl_uint8 loop = 1; //enable loop back to the host, mainly for debug purpose
-  if (setsockopt(this->m_SocketDescriptor, IPPROTO_IP, IP_MULTICAST_LOOP,
-                 (const char*)&loop, sizeof loop) < 0) {
-    CloseSocket(this->m_SocketDescriptor);
-    return -1;
-  }
-#if defined (_WIN32)
-  const char addr = INADDR_ANY;
-#else
-  struct in_addr addr;
-  addr.s_addr = INADDR_ANY; // the address could be others
-#endif
-  
-  if (setsockopt(this->m_SocketDescriptor, IPPROTO_IP, IP_MULTICAST_IF, &addr, sizeof addr) < 0) {
-    CloseSocket(this->m_SocketDescriptor);
-    return -1;
-  }
-  
-  //If not otherwise specified, multicast datagrams are sent with a default value of 1, to prevent them to be forwarded beyond the local network. To change the TTL to the value you desire (from 0 to 255), put that value into a variable (here I name it "ttl") and write somewhere in your program:
-#if defined (_WIN32)
-#define TTL_TYPE const char
-#else
-#define TTL_TYPE igtl_uint8
-#endif
-  TTL_TYPE ttl = 64;
-  if(setsockopt(this->m_SocketDescriptor, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl))<0)
-  {
-    CloseSocket(this->m_SocketDescriptor);
-    return -1;
-  }
-  /*if ( this->BindSocket(this->m_SocketDescriptor, port) != 0)
-  {
-    // failed to bind or listen.
-    this->CloseSocket(this->m_SocketDescriptor);
-    this->m_SocketDescriptor = -1;
-    return -1;
-  }*/ // Bind socket in the server would conflict the binding in the client.
-  // Success.
   return 0;
 }
   

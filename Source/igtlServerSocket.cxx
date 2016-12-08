@@ -28,6 +28,21 @@
 #include "igtlServerSocket.h"
 #include "igtlClientSocket.h"
 
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#include <winsock2.h>
+#include <Ws2tcpip.h>
+#include <windows.h>
+#else
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <string.h>
+#endif
+
+
 namespace igtl
 {
 
