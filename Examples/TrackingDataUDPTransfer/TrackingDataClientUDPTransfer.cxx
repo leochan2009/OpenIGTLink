@@ -146,6 +146,8 @@ void* ThreadFunctionReadSocket(void* ptr)
     int totMsgLen = parentObj.clientSocket->ReadSocket(UDPPaket, RTP_PAYLOAD_LENGTH+RTP_HEADER_LENGTH);
     if (totMsgLen>0)
     {
+      for(int i=78;i<84;i++)
+        std::cerr<<*(UDPPaket+i)<<std::endl;
       parentObj.wrapper->PushDataIntoPaketBuffer(UDPPaket, totMsgLen);
     }
   }

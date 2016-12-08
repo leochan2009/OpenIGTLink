@@ -222,7 +222,7 @@ namespace igtl {
             if(reorderBuffer->receivedFirstFrag == true && reorderBuffer->receivedLastFrag == true && reorderBuffer->filledPaketNum == reorderBuffer->totFragNumber)
             {
               igtl::UnWrappedMessage* message = new igtl::UnWrappedMessage();
-              message->messageDataLength = reorderBuffer->lastPaketLen+reorderBuffer->firstPaketLen+ (reorderBuffer->totFragNumber-2)*RTP_PAYLOAD_LENGTH;
+              message->messageDataLength = reorderBuffer->lastPaketLen+reorderBuffer->firstPaketLen+ (reorderBuffer->totFragNumber-2)*(RTP_PAYLOAD_LENGTH-IGTL_HEADER_SIZE-extendedHeaderLength);
               memcpy(message->messagePackPointer, reorderBuffer->firstFragBuffer, reorderBuffer->firstPaketLen);
               memcpy(message->messagePackPointer+reorderBuffer->firstPaketLen, reorderBuffer->buffer, (RTP_PAYLOAD_LENGTH-IGTL_HEADER_SIZE-extendedHeaderLength)*(reorderBuffer->totFragNumber-2));
               memcpy(message->messagePackPointer+reorderBuffer->firstPaketLen+(RTP_PAYLOAD_LENGTH-IGTL_HEADER_SIZE-extendedHeaderLength)*(reorderBuffer->totFragNumber-2), reorderBuffer->lastFragBuffer, reorderBuffer->lastPaketLen);
@@ -261,6 +261,8 @@ namespace igtl {
       {
         this->glock->Lock();
         socket->WriteSocket(this->GetPackPointer(), this->GetPackedMSGLocation());
+        for(int i=78;i<84;i++)
+          std::cerr<<*(this->GetPackPointer()+i)<<std::endl;
         this->glock->Unlock();
       }
       leftmessageContent = messageContentPointer + this->GetCurMSGLocation();

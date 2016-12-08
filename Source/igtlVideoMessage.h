@@ -209,18 +209,49 @@ public:
   /// Gets the height of the image scalars.
   int  GetHeight()             { return height; };
 
-  /// Gets the size (length) of the byte array for the image data.
-  /// The size is defined by dimensions[0]*dimensions[1]*dimensions[2]*scalarSize*numComponents.
-  // TODO: Should returned value be 64-bit integer?
+  /// This should only be called when the data is unpacked
   int  GetBitStreamSize()
   {
-    return GetPackBodySize()-IGTL_VIDEO_HEADER_SIZE;
+    if (this->m_IsBodyUnpacked)
+    {
+#if OpenIGTLink_HEADER_VERSION >= 2
+      if (m_HeaderVersion == IGTL_HEADER_VERSION_2)
+      {
+       return GetPackBodySize()-IGTL_VIDEO_HEADER_SIZE - sizeof(igtl_extended_header) - m_MetaDataHeaderSize - GetMetaDataSize();
+      }
+      else
+      {
+        return GetPackBodySize()-IGTL_VIDEO_HEADER_SIZE;
+      }
+#else
+      return GetPackBodySize()-IGTL_VIDEO_HEADER_SIZE;
+#endif
+    }
+    else
+    {
+      return -1;
+    }
   };
   
   void SetBitStreamSize(int size)
   {
     bitStreamSize = size;
-    m_MessageSize = size + IGTL_VIDEO_HEADER_SIZE + IGTL_HEADER_SIZE;
+#if OpenIGTLink_HEADER_VERSION >= 2
+    int message_size(-1);
+    if (m_HeaderVersion == IGTL_HEADER_VERSION_2)
+    {
+      m_MessageSize = IGTL_HEADER_SIZE + bitStreamSize + sizeof(igtl_extended_header) + GetMetaDataHeaderSize() + GetMetaDataSize();
+    }
+    else
+    {
+      m_MessageSize = size + IGTL_VIDEO_HEADER_SIZE + IGTL_HEADER_SIZE;
+
+    }
+#else
+    m_MessageSize = size + IGTL_HEADER_SIZE;
+
+#endif
+    
   };
 
   /// Allocates a memory area for the scalar data based on the dimensions of the subvolume,
@@ -263,8 +294,8 @@ public:
   /// Pack() serializes the header and body based on the member variables.
   /// PackBody() must be implemented in the child class. (for fragmented pack support)
 
-  virtual int  PackBody();
-  virtual int  UnpackBody();
+  virtual int  PackContent();
+  virtual int  UnpackContent();
 
   /// Allocate memory specifying the body size
   /// (used when create a brank package to receive data) (for fragmented pack support)

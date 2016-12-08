@@ -140,20 +140,7 @@ void VideoMessage::AllocateBuffer()
   
 int VideoMessage::CalculateContentBufferSize()
 {
-#if OpenIGTLink_HEADER_VERSION >= 2
-  int message_size(-1);
-  if (m_HeaderVersion == IGTL_HEADER_VERSION_2)
-  {
-    message_size =  bitStreamSize + IGTL_VIDEO_HEADER_SIZE + sizeof(igtl_extended_header) + GetMetaDataHeaderSize() + GetMetaDataSize();
-  }
-  else
-  {
-    message_size =  IGTL_VIDEO_HEADER_SIZE + bitStreamSize;
-  }
-#else
-  int message_size =  bitStreamSize;
-#endif
-  return message_size;
+  return bitStreamSize + IGTL_VIDEO_HEADER_SIZE;
 }
 
 
@@ -231,7 +218,7 @@ int VideoMessage::GetBodyPackSize()
   return size;
 }
 
-int VideoMessage::PackBody()
+int VideoMessage::PackContent()
 {
   igtl_frame_header* frame_header = (igtl_frame_header*)this->m_FrameHeader;
 
@@ -241,25 +228,29 @@ int VideoMessage::PackBody()
   frame_header->width             = this->width;
   frame_header->height            = this->height;
   igtl_frame_convert_byte_order(frame_header);
-
+  m_MetaDataHeader = &m_Body[CalculateContentBufferSize()+sizeof(igtl_extended_header)];
   return 1;
 
 }
 
 
-int VideoMessage::UnpackBody()
+int VideoMessage::UnpackContent()
 {
-  if (this->m_FrameHeader)
+#if OpenIGTLink_HEADER_VERSION >= 2
+  if (m_HeaderVersion == IGTL_HEADER_VERSION_2)
   {
-    delete [] this->m_FrameHeader;
+    this->m_FrameHeader = &m_Body[sizeof(igtl_extended_header)];
   }
-  if (this->m_Frame)
+  else
   {
-    delete [] this->m_Frame;
+    this->m_FrameHeader = m_Body;
   }
+  this->m_Frame  = &m_FrameHeader[IGTL_VIDEO_HEADER_SIZE];
+#else
+  this->m_FrameHeader = m_Body;
+  this->m_Frame = m_Body;
+#endif
   
-  this->m_FrameHeader = this->m_Body;
-
   igtl_frame_header* frame_header = (igtl_frame_header*)m_FrameHeader;
   igtl_frame_convert_byte_order(frame_header);
 
