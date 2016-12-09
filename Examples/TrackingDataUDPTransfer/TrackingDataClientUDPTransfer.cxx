@@ -73,10 +73,10 @@ int main(int argc, char* argv[])
 
   igtl::UDPClientSocket::Pointer socket;
   socket = igtl::UDPClientSocket::New();
-  socket->JoinNetwork("226.0.0.1", port, 1);
+  //socket->JoinNetwork("226.0.0.1", port, 1);
   igtl::ConditionVariable::Pointer conditionVar = igtl::ConditionVariable::New();
   igtl::SimpleMutexLock* glock = igtl::SimpleMutexLock::New();
-  //socket->JoinNetwork("127.0.0.1", port, 0); // join the local network for a client connection
+  socket->JoinNetwork("127.0.0.1", port, 0); // join the local network for a client connection
   igtl::MessageRTPWrapper::Pointer rtpWrapper = igtl::MessageRTPWrapper::New();
   //std::vector<ReorderBuffer> reorderBufferVec(10, ReorderBuffer();
   //int loop = 0;

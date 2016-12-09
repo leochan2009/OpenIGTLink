@@ -28,13 +28,16 @@ namespace igtl {
     this->status = PaketReady;
     this->curMSGLocation = 0;
     this->curPackedMSGLocation = 0;
-    this->framentNumber = 0;
+    this->fragmentNumber = 0;
     this->MSGHeader= new igtl_uint8[IGTL_HEADER_SIZE];
     this->extendedHeaderSize = sizeof(igtl_extended_header);
     this->glock = igtl::SimpleMutexLock::New();
     this->incommingPakets =  PaketBuffer::PaketBuffer();
     this->reorderBuffer = new igtl::ReorderBuffer();
     this->reorderBufferMap = std::map<igtl_uint32, igtl::ReorderBuffer*>();
+    this->fragmentNumberList=std::vector<igtl_uint16>();
+    this->paketSendTimeStampList = std::vector<igtl_uint64>();
+    this->wrapperTimer = igtl::TimeStamp::New();
   }
   
   MessageRTPWrapper::~MessageRTPWrapper()
@@ -149,16 +152,26 @@ namespace igtl {
         igtl::MessageHeader::Pointer header = igtl::MessageHeader::New();
         header->AllocatePack();
         memcpy(header->GetPackPointer(), UDPPaket + curPackedMSGLocation, IGTL_HEADER_SIZE);
-        igtl_uint16 fragmentNumber;
-        memcpy(&fragmentNumber, (void*)(UDPPaket + RTP_HEADER_LENGTH+IGTL_HEADER_SIZE+extendedHeaderLength-2),2);
-        igtl_uint32 messageID;
+        igtl_uint16 fragmentField;
+        memcpy(&fragmentField, (void*)(UDPPaket + RTP_HEADER_LENGTH+IGTL_HEADER_SIZE+extendedHeaderLength-2),2);
         memcpy(&messageID, (void*)(UDPPaket + RTP_HEADER_LENGTH+IGTL_HEADER_SIZE+extendedHeaderLength-6),4);
         if(igtl_is_little_endian())
         {
-          fragmentNumber = BYTE_SWAP_INT16(fragmentNumber);
+          fragmentField = BYTE_SWAP_INT16(fragmentField);
           messageID = BYTE_SWAP_INT32(messageID);
         }
         //this->reorderBufferMap.erase(it);
+        if (reorderBufferMap.size()>20) // get rid of the first reoderBuffer when waiting for a long time
+        {
+          if(reorderBufferMap.begin()->first != messageID)
+          {
+            reorderBufferMap.erase(reorderBufferMap.begin());
+          }
+          else
+          {
+            reorderBufferMap.erase(reorderBufferMap.begin()++);
+          }
+        }
         std::map<igtl_uint32, igtl::ReorderBuffer*>::iterator it = this->reorderBufferMap.find(messageID);
         if (it == this->reorderBufferMap.end())
         {
@@ -168,7 +181,7 @@ namespace igtl {
         }
         this->reorderBuffer = it->second;
         header->Unpack();
-        if(fragmentNumber==0X0000) // fragment doesn't exist
+        if(fragmentField==0X0000) // fragment doesn't exist
         {
           
           if (strcmp(header->GetDeviceType(),deviceType)==0 && strcmp(header->GetDeviceName(),deviceName)==0)
@@ -195,7 +208,7 @@ namespace igtl {
           if (strcmp(header->GetDeviceType(),deviceType)==0 && strcmp(header->GetDeviceName(),deviceName)==0)
           {
             int bodyMsgLength = (RTP_PAYLOAD_LENGTH-IGTL_HEADER_SIZE-extendedHeaderLength);//this is the length of the body within a full fragment paket
-            if(fragmentNumber==0X8000)// To do, fix the issue when later fragment arrives earlier than the beginning fragment
+            if(fragmentField==0X8000)// To do, fix the issue when later fragment arrives earlier than the beginning fragment
             {
               *(UDPPaket + curPackedMSGLocation + IGTL_HEADER_SIZE+extendedHeaderLength-2) = 0X0000; // set the fragment no. to 0000
               memcpy(reorderBuffer->firstFragBuffer, UDPPaket + curPackedMSGLocation, totMsgLen-curPackedMSGLocation);
@@ -204,17 +217,17 @@ namespace igtl {
               reorderBuffer->receivedFirstFrag = true;
               status = WaitingForAnotherPaket;
             }
-            else if(fragmentNumber>=0XE000)// this is the last fragment
+            else if(fragmentField>=0XE000)// this is the last fragment
             {
-              reorderBuffer->totFragNumber = fragmentNumber - 0XE000 + 1;
+              reorderBuffer->totFragNumber = fragmentField - 0XE000 + 1;
               memcpy(reorderBuffer->lastFragBuffer, UDPPaket + RTP_HEADER_LENGTH+IGTL_HEADER_SIZE+extendedHeaderLength, totMsgLen-(RTP_HEADER_LENGTH+IGTL_HEADER_SIZE+extendedHeaderLength));
               reorderBuffer->receivedLastFrag = true;
               reorderBuffer->lastPaketLen = totMsgLen-(RTP_HEADER_LENGTH+IGTL_HEADER_SIZE+extendedHeaderLength);
               status = WaitingForAnotherPaket;
             }
-            else if(fragmentNumber>0X8000 && fragmentNumber<0XE000)
+            else if(fragmentField>0X8000 && fragmentField<0XE000)
             {
-              int curFragNumber = fragmentNumber - 0X8000;
+              int curFragNumber = fragmentField - 0X8000;
               memcpy(reorderBuffer->buffer+(curFragNumber-1)*bodyMsgLength, UDPPaket + RTP_HEADER_LENGTH+IGTL_HEADER_SIZE+extendedHeaderLength, totMsgLen-(RTP_HEADER_LENGTH+IGTL_HEADER_SIZE+extendedHeaderLength));
               status = WaitingForAnotherPaket;
             }
@@ -253,6 +266,8 @@ namespace igtl {
     int MSGContentLength = msgtotalLen- IGTL_HEADER_SIZE-sizeof(igtl_extended_header); // this is the m_content size + meta data size
     int leftMsgLen = MSGContentLength;
     igtl_uint8* leftmessageContent = messageContentPointer;
+    this->fragmentNumberList.clear();
+    this->paketSendTimeStampList.clear();
     do
     {
       status = this->WrapMessage(leftmessageContent, leftMsgLen);
@@ -262,6 +277,9 @@ namespace igtl {
         this->glock->Lock();
         socket->WriteSocket(this->GetPackPointer(), this->GetPackedMSGLocation());
         this->glock->Unlock();
+        this->fragmentNumberList.push_back(this->fragmentNumber);
+        this->wrapperTimer->GetTime();
+        this->paketSendTimeStampList.push_back(this->wrapperTimer->GetTimeStampUint64());
       }
       leftmessageContent = messageContentPointer + this->GetCurMSGLocation();
       leftMsgLen = MSGContentLength - this->GetCurMSGLocation();
@@ -320,7 +338,7 @@ namespace igtl {
       AvailabeBytesNum = RTP_PAYLOAD_LENGTH;
       curMSGLocation = 0;
       curPackedMSGLocation = 0;
-      framentNumber = 0;
+      fragmentNumber = -1; // -1 = 0XFFFF to indicate no the message has not fragments
     }
     if (status != WaitingForFragment)
     {
@@ -369,7 +387,7 @@ namespace igtl {
         this->curMSGLocation = AvailabeBytesNum-IGTL_HEADER_SIZE-this->extendedHeaderSize;
         AvailabeBytesNum = RTP_PAYLOAD_LENGTH;
         SeqNum++;
-        framentNumber++;
+        fragmentNumber++;
       }
     }
     else
@@ -378,9 +396,10 @@ namespace igtl {
       memmove(packedMsg+4, (void *)(&this->fragmentTimeIncrement), 4);
       memmove(packedMsg+8, (void *)(&SSRC), 4); // SSRC needs to set by different devices, collision should be avoided.
       curPackedMSGLocation = RTP_HEADER_LENGTH;
+      fragmentNumber++;
       if (bodyMsgLen <= (AvailabeBytesNum-IGTL_HEADER_SIZE-this->extendedHeaderSize))
       {
-        igtl_uint16 temp = 0XE000+framentNumber; //set the seconde bit to be 1, indicates the end of fragmented msg.;
+        igtl_uint16 temp = 0XE000+fragmentNumber; //set the seconde bit to be 1, indicates the end of fragmented msg.;
         if(igtl_is_little_endian())
         {
           temp = BYTE_SWAP_INT16(temp);
@@ -396,7 +415,7 @@ namespace igtl {
       }
       else if(bodyMsgLen > (AvailabeBytesNum-IGTL_HEADER_SIZE-this->extendedHeaderSize))
       {
-        igtl_uint16 temp = 0X8000+framentNumber; //set the seconde bit to be 1, indicates the end of fragmented msg.;
+        igtl_uint16 temp = 0X8000+fragmentNumber;
         if(igtl_is_little_endian())
         {
           temp = BYTE_SWAP_INT16(temp);
@@ -411,7 +430,6 @@ namespace igtl {
       }
       AvailabeBytesNum = RTP_PAYLOAD_LENGTH;
       SeqNum++;
-      framentNumber++;
     }
     return status;
   }

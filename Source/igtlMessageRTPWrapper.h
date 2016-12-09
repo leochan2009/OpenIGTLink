@@ -27,6 +27,7 @@
 #include "igtlMutexLock.h"
 #include "igtl_header.h"
 #include "igtl_util.h"
+#include "igtlTimeStamp.h"
 
 #if defined(WIN32) || defined(_WIN32)
 #include <windows.h>
@@ -96,6 +97,15 @@ public:
     ToUnpackAnotherMSG,
     WaitingForAnotherPaket
   };
+  
+  igtl_uint32 messageID;
+  igtl_uint16 fragmentNumber;
+  
+  std::vector<igtl_uint64> paketSendTimeStampList;
+  
+  std::vector<igtl_uint64> paketReceiveTimeStampList;
+  
+  std::vector<igtl_uint16> fragmentNumberList;
   //virtual void  AllocateScalars();
 
   /// Gets a pointer to the scalar data.
@@ -140,6 +150,8 @@ public:
   
   std::map<igtl_uint32, igtl::UnWrappedMessage*> unWrappedMessages;
   
+  
+  
 protected:
   MessageRTPWrapper();
   ~MessageRTPWrapper();
@@ -156,7 +168,6 @@ private:
   igtl_uint8* MSGHeader;
   unsigned int curMSGLocation;
   unsigned int curPackedMSGLocation;
-  igtl_uint8 framentNumber;
   unsigned int numberOfDataFrag;
   unsigned int numberOfDataFragToSent;
   unsigned char RTPPayLoadType;
@@ -171,6 +182,7 @@ private:
   igtl::ReorderBuffer* reorderBuffer;
   std::map<igtl_uint32, igtl::ReorderBuffer*> reorderBufferMap;
   PaketBuffer incommingPakets;
+  igtl::TimeStamp::Pointer wrapperTimer;
 };
 
 

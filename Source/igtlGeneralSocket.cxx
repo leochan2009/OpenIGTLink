@@ -128,7 +128,8 @@ namespace igtl
       return -1;
     }
 
-    struct in_addr addr;
+    
+    /*bstruct in_addr addr;
     addr.s_addr = INADDR_ANY; // the address could be others
 #if defined (_WIN32)
     if (setsockopt(sock, IPPROTO_IP, IP_MULTICAST_IF, (const char*)&addr, sizeof addr) < 0) {
@@ -136,11 +137,11 @@ namespace igtl
       return -1;
   }
 #else
-    if (setsockopt(this->m_SocketDescriptor, IPPROTO_IP, IP_MULTICAST_IF, &addr, sizeof addr) < 0) {
+    if (setsockopt(this->m_SocketDescriptor, IPPROTO_IP, IP_MULTICAST_IF, &addr, sizeof(struct in_addr)) < 0) {
       CloseSocket(this->m_SocketDescriptor);
       return -1;
     }
-#endif
+#endif */
 
     //If not otherwise specified, multicast datagrams are sent with a default value of 1, to prevent them to be forwarded beyond the local network. To change the TTL to the value you desire (from 0 to 255), put that value into a variable (here I name it "ttl") and write somewhere in your program:
 #if defined (_WIN32)
@@ -167,6 +168,22 @@ namespace igtl
   
   int GeneralSocket::CreateUDPClientSocket()
   {
+#if defined(_WIN32) && !defined(__CYGWIN__)
+    // Declare variables
+    WSADATA wsaData;
+    //SOCKET ListenSocket;
+    //sockaddr_in service;
+    
+    //---------------------------------------
+    // Initialize Winsock
+    int iResult = WSAStartup( MAKEWORD(2,2), &wsaData );
+    if( iResult != NO_ERROR )
+    {
+      std::cerr << "Error at WSAStartup" << std::endl;
+      return -1;
+    }
+#endif
+    this->m_SocketDescriptor = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (BindSocket(this->m_SocketDescriptor, this->PortNum) == 0);
     {
       /*With UDP, you have to bind() the socket in the client because UDP is connectionless, so there is no other way for the stack to know which program to deliver datagrams to for a particular port.
@@ -184,7 +201,9 @@ namespace igtl
           return this->m_SocketDescriptor;
         }
       }
+      return this->m_SocketDescriptor;
     }
+    return -1;
   }
 
   //-----------------------------------------------------------------------------
