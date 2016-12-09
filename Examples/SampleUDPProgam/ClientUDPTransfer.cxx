@@ -10,9 +10,9 @@
 //
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
-#include <windows.h>
 #include <winsock2.h>
 #include <Ws2tcpip.h>
+#include <windows.h>
 #else
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -80,11 +80,14 @@ int main()
   }
   imreq.imr_multiaddr.s_addr = inet_addr("226.0.0.1");
   imreq.imr_interface.s_addr = INADDR_ANY; // use DEFAULT interface
-  
+#if defined(_WIN32) && !defined(__CYGWIN__)
+  status = setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP,
+    (const char *)&imreq, sizeof(struct ip_mreq));
+#else
   // JOIN multicast group on default interface
   status = setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP,
                       (const void *)&imreq, sizeof(struct ip_mreq));
-  
+#endif  
   socklen = sizeof(struct sockaddr_in);
   while(1)
   {

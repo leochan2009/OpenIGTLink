@@ -9,9 +9,10 @@
 // This code has NOT been tested
 //
 #if defined(_WIN32) && !defined(__CYGWIN__)
-#include <windows.h>
 #include <winsock2.h>
 #include <Ws2tcpip.h>
+#include <windows.h>
+#pragma comment(lib "Ws2_32.lib")
 #else
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -67,7 +68,20 @@ int main()
   }
   
   iaddr.s_addr = INADDR_ANY; // use DEFAULT interface
-  
+
+#if defined(_WIN32) && !defined(__CYGWIN__)
+                             // Set the outgoing interface to DEFAULT
+  setsockopt(sock, IPPROTO_IP, IP_MULTICAST_IF, (const char*)&iaddr,
+    sizeof(struct in_addr));
+
+  // Set multicast packet TTL to 3; default TTL is 1
+  setsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, (const char*)&ttl,
+    sizeof(unsigned char));
+
+  // send multicast traffic to myself too
+  status = setsockopt(sock, IPPROTO_IP, IP_MULTICAST_LOOP,
+    (const char*)&one, sizeof(unsigned char));
+#else
   // Set the outgoing interface to DEFAULT
   setsockopt(sock, IPPROTO_IP, IP_MULTICAST_IF, &iaddr,
              sizeof(struct in_addr));
@@ -79,7 +93,7 @@ int main()
   // send multicast traffic to myself too
   status = setsockopt(sock, IPPROTO_IP, IP_MULTICAST_LOOP,
                       &one, sizeof(unsigned char));
-  
+#endif  
   // set destination multicast address
   saddr.sin_family = PF_INET;
   saddr.sin_addr.s_addr = inet_addr("226.0.0.1");
