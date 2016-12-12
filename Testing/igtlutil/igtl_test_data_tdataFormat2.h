@@ -30,12 +30,12 @@ unsigned char test_tdata_messageFormat2[] = {
   0xbd, 0x30, 0x9e, 0x0e, 0x33, 0x10, 0x1c, 0x37, /* CRC */
 
   /* Extended header
-   0                 2                      4               8           12
-   +-----------------+----------------------+---------------+-------------+
-   | EXT_HEADER_SIZE | METADATA_HEADER_SIZE | METADATA_SIZE | MESSAGE_ID  |
-   +-----------------+----------------------+---------------+-------------+*/
+   0                 2                      4               8           12             14
+   +-----------------+----------------------+---------------+-------------+------------
+   | EXT_HEADER_SIZE | METADATA_HEADER_SIZE | METADATA_SIZE | MESSAGE_ID  | Reservered |
+   +-----------------+----------------------+---------------+-------------+------------*/
   0x00, 0x0c, 0x00, 0x12, 0x00, 0x00, 0x00, 0x27,
-  0x00, 0x00, 0x00, 0x01,
+  0x00, 0x00, 0x00, 0x01, 0X00, 0X00,
   
   /*---------- TDATA message body ------------*/
   /* Tracker data 0 */

@@ -53,20 +53,15 @@ int main(int argc, char* argv[])
   //------------------------------------------------------------
   // Parse Arguments
 
-  if (argc != 4) // check number of arguments
+  if (argc != 2) // check number of arguments
     {
     // If not correct, print usage
-    std::cerr << "Usage: " << argv[0] << " <hostname> <port> <fps>"    << std::endl;
-    std::cerr << "    <hostname> : IP or host name"                    << std::endl;
+    std::cerr << "Usage: " << argv[0] << " <port>"    << std::endl;
     std::cerr << "    <port>     : Port # (18944 in Slicer default)"   << std::endl;
-    std::cerr << "    <fps>      : Frequency (fps) to send coordinate" << std::endl;
     exit(0);
     }
 
-  char*  hostname = argv[1];
-  int    port     = atoi(argv[2]);
-  double fps      = atof(argv[3]);
-  int    interval = (int) (1000.0 / fps);
+  int    port     = atoi(argv[1]);
 
   //------------------------------------------------------------
   // Establish Connection
@@ -146,8 +141,6 @@ void* ThreadFunctionReadSocket(void* ptr)
     int totMsgLen = parentObj.clientSocket->ReadSocket(UDPPaket, RTP_PAYLOAD_LENGTH+RTP_HEADER_LENGTH);
     if (totMsgLen>0)
     {
-      for(int i=78;i<84;i++)
-        std::cerr<<*(UDPPaket+i)<<std::endl;
       parentObj.wrapper->PushDataIntoPaketBuffer(UDPPaket, totMsgLen);
     }
   }
@@ -157,7 +150,7 @@ int ReceiveTrackingData(igtl::TrackingDataMessage::Pointer& trackingMSG)
 {
   // Deserialize the transform data
   // If you want to skip CRC check, call Unpack() without argument.
-  int c = trackingMSG->Unpack(0); // to do crc check fails, fix the error
+  int c = trackingMSG->Unpack(1); // to do crc check fails, fix the error
 
   if (c & igtl::MessageHeader::UNPACK_BODY) // if CRC check is OK
     {

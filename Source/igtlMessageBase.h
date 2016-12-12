@@ -304,6 +304,9 @@ namespace igtl
     /// after the message header is set.
     int            m_BodySizeToRead;
     
+    
+    igtl_uint64    m_CRC;
+    
     /// A character string for the send device type (message type).
     std::string    m_SendMessageType;
     

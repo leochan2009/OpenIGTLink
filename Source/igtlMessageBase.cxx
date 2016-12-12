@@ -707,7 +707,7 @@ int MessageBase::CopyHeader(const MessageBase* mb)
   m_IsBodyUnpacked       = mb->m_IsBodyUnpacked;
   m_BodySizeToRead       = mb->m_BodySizeToRead;
   m_HeaderVersion        = mb->m_HeaderVersion;
-
+  m_CRC                  = mb->m_CRC;
   return 1;
 }
 
@@ -757,6 +757,7 @@ void MessageBase::UnpackHeader(int& r)
   m_TimeStampSec = (h->timestamp >> 32 ) & 0xFFFFFFFF;
   m_HeaderVersion = h->header_version;
   m_BodySizeToRead = h->body_size;
+  m_CRC = h->crc;
 
   char bodyType[IGTL_HEADER_TYPE_SIZE+1];
   char deviceName[IGTL_HEADER_NAME_SIZE+1];
@@ -781,7 +782,6 @@ void MessageBase::UnpackHeader(int& r)
 
 void MessageBase::UnpackBody(int crccheck, int& r)
 {
-  igtl_header* h   = (igtl_header*) m_Header;
   igtl_uint64  crc = crc64(0, 0, 0LL); // initial crc
 
   if (crccheck)
@@ -791,10 +791,10 @@ void MessageBase::UnpackBody(int crccheck, int& r)
   }
   else
   {
-    crc = h->crc;
+    crc = this->m_CRC ;
   }
 
-  if (crc == h->crc)
+  if (crc == this->m_CRC)
   {
     // Unpack (deserialize) the Body
 #if OpenIGTLink_HEADER_VERSION >= 2

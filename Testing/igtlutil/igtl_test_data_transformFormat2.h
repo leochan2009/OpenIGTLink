@@ -29,12 +29,12 @@ unsigned char test_transform_message_Format2[] = {
   0xf6, 0x98, 0xf6, 0x4f, 0xda, 0xe2, 0x66, 0xdd, /* CRC */
   
   /* Extended header
-  0                 2                      4               8           12    
-	+-----------------+----------------------+---------------+-------------+
-	| EXT_HEADER_SIZE | METADATA_HEADER_SIZE | METADATA_SIZE | MESSAGE_ID  |
-	+-----------------+----------------------+---------------+-------------+*/
+   0                 2                      4               8           12             14
+   +-----------------+----------------------+---------------+-------------+------------
+   | EXT_HEADER_SIZE | METADATA_HEADER_SIZE | METADATA_SIZE | MESSAGE_ID  | Reservered |
+   +-----------------+----------------------+---------------+-------------+------------*/
   0x00, 0x0c, 0x00, 0x12, 0x00, 0x00, 0x00, 0x27,  
-  0x00, 0x00, 0x00, 0x01, 
+  0x00, 0x00, 0x00, 0x01, 0x00, 0x00,
   0xBF, 0x74, 0x73, 0xCD, 0x3E, 0x49, 0x59, 0xE6, /* tx, ty */
   0xBE, 0x63, 0xDD, 0x98, 0xBE, 0x49, 0x59, 0xE6, /* tz, sx */
   0x3E, 0x12, 0x49, 0x1B, 0x3F, 0x78, 0x52, 0xD6, /* sy, sz */
