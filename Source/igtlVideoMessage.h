@@ -243,7 +243,7 @@ public:
     int message_size(-1);
     if (m_HeaderVersion == IGTL_HEADER_VERSION_2)
     {
-      m_MessageSize = IGTL_HEADER_SIZE + bitStreamSize + sizeof(igtl_extended_header) + GetMetaDataHeaderSize() + GetMetaDataSize();
+      m_MessageSize = IGTL_HEADER_SIZE + bitStreamSize + sizeof(igtl_extended_header) + GetMetaDataHeaderSize() + GetMetaDataSize() + IGTL_VIDEO_HEADER_SIZE;
     }
     else
     {

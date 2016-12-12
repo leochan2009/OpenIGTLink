@@ -84,7 +84,6 @@ VideoMessage::VideoMessage():
   ScalarSizeTable[8] = 0;                   // not defined
   ScalarSizeTable[9] = 0;                   // not defined
 
-  this->m_Header = new unsigned char [IGTL_HEADER_SIZE];
   this->m_Body   = NULL;
   m_Frame = NULL;
   m_FrameHeader = NULL;

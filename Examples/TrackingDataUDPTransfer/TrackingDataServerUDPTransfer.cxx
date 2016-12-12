@@ -44,6 +44,7 @@ int main(int argc, char* argv[])
     {
     // If not correct, print usage
     std::cerr << "Usage: " << argv[0] << "<clientIP> <port>"    << std::endl;
+    std::cerr << "    <client>     : "   << std::endl;
     std::cerr << "    <port>     : Port # (18944 in Slicer default)"   << std::endl;
     exit(0);
     }
