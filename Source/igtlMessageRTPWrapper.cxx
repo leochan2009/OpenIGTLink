@@ -279,7 +279,7 @@ namespace igtl {
         this->glock->Unlock();
         this->fragmentNumberList.push_back(this->fragmentNumber);
         this->wrapperTimer->GetTime();
-        this->paketSendTimeStampList.push_back(this->wrapperTimer->GetTimeStampUint64());
+        this->paketSendTimeStampList.push_back(this->wrapperTimer->GetTimeStampInNanoseconds());
       }
       leftmessageContent = messageContentPointer + this->GetCurMSGLocation();
       leftMsgLen = MSGContentLength - this->GetCurMSGLocation();
