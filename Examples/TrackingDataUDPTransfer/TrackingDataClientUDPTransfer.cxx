@@ -120,7 +120,7 @@ void* ThreadFunctionUnWrap(void* ptr)
   Wrapper parentObj = *(static_cast<Wrapper*>(info->UserData));
   while(1)
   {
-    parentObj.wrapper->UnWrapPaketWithTypeAndName(deviceType, trackingDeviceName);
+    parentObj.wrapper->UnWrapPacketWithTypeAndName(deviceType, trackingDeviceName);
     igtl::Sleep(5);
   }
 }
@@ -133,15 +133,15 @@ void* ThreadFunctionReadSocket(void* ptr)
   static_cast<igtl::MultiThreader::ThreadInfo*>(ptr);
   
   ReadSocketAndPush parentObj = *(static_cast<ReadSocketAndPush*>(info->UserData));
-  unsigned char UDPPaket[RTP_PAYLOAD_LENGTH+RTP_HEADER_LENGTH];
+  unsigned char UDPPacket[RTP_PAYLOAD_LENGTH+RTP_HEADER_LENGTH];
   const char *trackingDeviceName = "Tracker";
   const char *deviceType = "TDATA";
   while(1)
   {
-    int totMsgLen = parentObj.clientSocket->ReadSocket(UDPPaket, RTP_PAYLOAD_LENGTH+RTP_HEADER_LENGTH);
+    int totMsgLen = parentObj.clientSocket->ReadSocket(UDPPacket, RTP_PAYLOAD_LENGTH+RTP_HEADER_LENGTH);
     if (totMsgLen>0)
     {
-      parentObj.wrapper->PushDataIntoPaketBuffer(UDPPaket, totMsgLen);
+      parentObj.wrapper->PushDataIntoPacketBuffer(UDPPacket, totMsgLen);
     }
   }
 }

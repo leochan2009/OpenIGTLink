@@ -584,7 +584,7 @@ namespace igtl
       // FIXME : Use exceptions ?  igtlErrorMacro("Socket Error: Send failed.");
       return 0;
     }
-    return 1;
+    return n;
   }
   
   //-----------------------------------------------------------------------------

@@ -38,13 +38,13 @@
 namespace igtl
 {
   
-  class PaketBuffer {
+  class PacketBuffer {
   public:
-    PaketBuffer(){iPaketCount = 0; pPaketLengthInByte.reserve(100); totalLength= 0; pBsBuf.reserve(100);};
-    ~PaketBuffer(){pPaketLengthInByte.clear();pBsBuf.clear();};
-    int   iPaketCount;              ///< count number of NAL coded already
-    std::vector<int>  pPaketLengthInByte;       ///< length of NAL size in byte from 0 to iNalCount-1
-    std::vector<unsigned char> pBsBuf;       ///< buffer of Paket contained
+    PacketBuffer(){iPacketCount = 0; pPacketLengthInByte.reserve(100); totalLength= 0; pBsBuf.reserve(100);};
+    ~PacketBuffer(){pPacketLengthInByte.clear();pBsBuf.clear();};
+    int   iPacketCount;              ///< count number of NAL coded already
+    std::vector<int>  pPacketLengthInByte;       ///< length of NAL size in byte from 0 to iNalCount-1
+    std::vector<unsigned char> pBsBuf;       ///< buffer of Packet contained
     int totalLength;
   };
   
@@ -52,15 +52,15 @@ namespace igtl
   class ReorderBuffer
   {
   public:
-    ReorderBuffer(){firstPaketLen=0;lastPaketLen=0;filledPaketNum=0; totFragNumber = 0;receivedLastFrag=false;receivedFirstFrag=false;};
-    ReorderBuffer(ReorderBuffer const &anotherBuffer){firstPaketLen=anotherBuffer.firstPaketLen;lastPaketLen=anotherBuffer.lastPaketLen;filledPaketNum=anotherBuffer.filledPaketNum;receivedLastFrag=anotherBuffer.receivedLastFrag;receivedFirstFrag=anotherBuffer.receivedFirstFrag;};
+    ReorderBuffer(){firstPacketLen=0;lastPacketLen=0;filledPacketNum=0; totFragNumber = 0;receivedLastFrag=false;receivedFirstFrag=false;};
+    ReorderBuffer(ReorderBuffer const &anotherBuffer){firstPacketLen=anotherBuffer.firstPacketLen;lastPacketLen=anotherBuffer.lastPacketLen;filledPacketNum=anotherBuffer.filledPacketNum;receivedLastFrag=anotherBuffer.receivedLastFrag;receivedFirstFrag=anotherBuffer.receivedFirstFrag;};
     ~ReorderBuffer(){};
     unsigned char buffer[RTP_PAYLOAD_LENGTH*(16384-2)];  // we use 14 bits for fragment number, 2^14 = 16384. maximum
     unsigned char firstFragBuffer[RTP_PAYLOAD_LENGTH];
     unsigned char lastFragBuffer[RTP_PAYLOAD_LENGTH];
-    uint32_t firstPaketLen;
-    uint32_t lastPaketLen;
-    uint32_t filledPaketNum;
+    uint32_t firstPacketLen;
+    uint32_t lastPacketLen;
+    uint32_t filledPacketNum;
     uint32_t totFragNumber;
     bool receivedLastFrag;
     bool receivedFirstFrag;
@@ -88,22 +88,24 @@ public:
   igtlNewMacro(igtl::MessageRTPWrapper);
 
 public:
-  enum PaketStatus
+  enum PacketStatus
   {
-    PaketReady,
+    PacketReady,
     WaitingForAnotherMSG,
     WaitingForFragment,
     MessageReady,
     ToUnpackAnotherMSG,
-    WaitingForAnotherPaket
+    WaitingForAnotherPacket
   };
   
   igtl_uint32 messageID;
   igtl_uint16 fragmentNumber;
   
-  std::vector<igtl_uint64> paketSendTimeStampList;
+  std::vector<igtl_uint64> PacketSendTimeStampList;
   
-  std::vector<igtl_uint64> paketReceiveTimeStampList;
+  std::vector<igtl_uint64> PacketTotalLengthList;
+  
+  std::vector<igtl_uint64> PacketReceiveTimeStampList;
   
   std::vector<igtl_uint16> fragmentNumberList;
   //virtual void  AllocateScalars();
@@ -122,9 +124,9 @@ public:
   
   int WrapMessageAndSend(igtl::UDPServerSocket::Pointer &socket, igtl_uint8* messagePackPointer, int msgtotalLen);
   
-  int PushDataIntoPaketBuffer(igtlUint8* UDPPaket, igtlUint16 paketLen);
+  int PushDataIntoPacketBuffer(igtlUint8* UDPPacket, igtlUint16 PacketLen);
   
-  int UnWrapPaketWithTypeAndName(const char *deviceType, const char * deviceName);
+  int UnWrapPacketWithTypeAndName(const char *deviceType, const char * deviceName);
   
   igtl::MessageBase::Pointer UnWrapMessage(igtl_uint8* messageContent, int totMsgLen);
   
@@ -181,7 +183,7 @@ private:
   igtl::SimpleMutexLock* glock;
   igtl::ReorderBuffer* reorderBuffer;
   std::map<igtl_uint32, igtl::ReorderBuffer*> reorderBufferMap;
-  PaketBuffer incommingPakets;
+  PacketBuffer incommingPackets;
   igtl::TimeStamp::Pointer wrapperTimer;
 };
 

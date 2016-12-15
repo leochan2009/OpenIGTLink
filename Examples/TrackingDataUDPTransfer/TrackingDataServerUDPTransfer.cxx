@@ -134,7 +134,7 @@ int SendTrackingData(igtl::UDPServerSocket::Pointer &socket, igtl::MessageRTPWra
   messageID ++;
   trackingMsg->Pack();
   rtpWrapper->SetSSRC(1);
-  int status = igtl::MessageRTPWrapper::PaketReady;
+  int status = igtl::MessageRTPWrapper::PacketReady;
   status = rtpWrapper->WrapMessageAndSend(socket, (unsigned char*)trackingMsg->GetPackPointer(), trackingMsg->GetPackSize());
   //------------------------------------------------------------
   
