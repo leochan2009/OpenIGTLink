@@ -105,7 +105,7 @@ public:
   
   std::vector<igtl_uint64> PacketTotalLengthList;
   
-  std::vector<igtl_uint64> PacketReceiveTimeStampList;
+  std::vector<igtl_uint64> PacketBeforeSendTimeStampList;
   
   std::vector<igtl_uint16> fragmentNumberList;
   //virtual void  AllocateScalars();

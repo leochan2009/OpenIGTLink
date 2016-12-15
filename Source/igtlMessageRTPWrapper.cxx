@@ -37,6 +37,7 @@ namespace igtl {
     this->reorderBufferMap = std::map<igtl_uint32, igtl::ReorderBuffer*>();
     this->fragmentNumberList=std::vector<igtl_uint16>();
     this->PacketSendTimeStampList = std::vector<igtl_uint64>();
+    this->PacketBeforeSendTimeStampList = std::vector<igtl_uint64>();
     this->PacketTotalLengthList = std::vector<igtl_uint64>();
     this->wrapperTimer = igtl::TimeStamp::New();
   }
@@ -271,12 +272,15 @@ namespace igtl {
     igtl_uint8* leftmessageContent = messageContentPointer;
     this->fragmentNumberList.clear();
     this->PacketSendTimeStampList.clear();
+    this->PacketBeforeSendTimeStampList.clear();
     this->PacketTotalLengthList.clear();
     do
     {
       status = this->WrapMessage(leftmessageContent, leftMsgLen);
       if (status == igtl::MessageRTPWrapper::WaitingForFragment || status == igtl::MessageRTPWrapper::PacketReady)
       {
+        this->wrapperTimer->GetTime();
+        this->PacketBeforeSendTimeStampList.push_back(this->wrapperTimer->GetTimeStampInNanoseconds());
         this->glock->Lock();
         int numByteSent = socket->WriteSocket(this->GetPackPointer(), this->GetPackedMSGLocation());
         this->glock->Unlock();
