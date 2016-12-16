@@ -122,6 +122,8 @@ public:
   /// Gets the number of fragments to be sent for the packed (serialized) data. Returns numberOfDataFragToSent
   int GetNumberODataFragToSent() { return numberOfDataFragToSent;  /* the data for transmission is too big for UDP transmission, so the data will be transmitted by multiple packets*/ };
   
+  void SetFCFS(bool isFCFS){FCFS = isFCFS;};
+  
   int WrapMessageAndSend(igtl::UDPServerSocket::Pointer &socket, igtl_uint8* messagePackPointer, int msgtotalLen);
   
   int PushDataIntoPacketBuffer(igtlUint8* UDPPacket, igtlUint16 PacketLen);
@@ -185,6 +187,7 @@ private:
   std::map<igtl_uint32, igtl::ReorderBuffer*> reorderBufferMap;
   PacketBuffer incommingPackets;
   igtl::TimeStamp::Pointer wrapperTimer;
+  bool FCFS; //first come first serve
 };
 
 

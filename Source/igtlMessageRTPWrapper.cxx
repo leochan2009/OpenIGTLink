@@ -40,6 +40,7 @@ namespace igtl {
     this->PacketBeforeSendTimeStampList = std::vector<igtl_uint64>();
     this->PacketTotalLengthList = std::vector<igtl_uint64>();
     this->wrapperTimer = igtl::TimeStamp::New();
+    this->FCFS=true;
   }
   
   MessageRTPWrapper::~MessageRTPWrapper()
@@ -102,6 +103,13 @@ namespace igtl {
   int MessageRTPWrapper::PushDataIntoPacketBuffer(igtlUint8* UDPPacket, igtlUint16 PacketLen)
   {
     this->glock->Lock();
+    igtlUint16 firstMsgLen = this->incommingPackets.pPacketLengthInByte[0];
+    if(this->incommingPackets.pPacketLengthInByte.size()>PacketMaximumBufferNum)
+    {
+      this->incommingPackets.pPacketLengthInByte.erase(this->incommingPackets.pPacketLengthInByte.begin());
+      this->incommingPackets.pBsBuf.erase(this->incommingPackets.pBsBuf.begin(), this->incommingPackets.pBsBuf.begin()+firstMsgLen);
+      this->incommingPackets.totalLength -= firstMsgLen;
+    }
     this->incommingPackets.pPacketLengthInByte.push_back(PacketLen);
     this->incommingPackets.pBsBuf.insert(this->incommingPackets.pBsBuf.end(), UDPPacket, UDPPacket+PacketLen);
     this->incommingPackets.totalLength += PacketLen;
@@ -128,12 +136,27 @@ namespace igtl {
     if (this->incommingPackets.pPacketLengthInByte.size())
     {
       this->glock->Lock();
-      igtlUint16 totMsgLen = this->incommingPackets.pPacketLengthInByte[0];
-      igtlUint8 * UDPPacket = new igtlUint8[totMsgLen];
-      memcpy(UDPPacket, this->incommingPackets.pBsBuf.data(), totMsgLen);
-      this->incommingPackets.pPacketLengthInByte.erase(this->incommingPackets.pPacketLengthInByte.begin());
-      this->incommingPackets.pBsBuf.erase(this->incommingPackets.pBsBuf.begin(), this->incommingPackets.pBsBuf.begin()+totMsgLen);
-      this->incommingPackets.totalLength -= totMsgLen;
+      igtlUint8 * UDPPacket;
+      igtlUint16 totMsgLen;
+      if(this->FCFS==true)
+      {
+        totMsgLen = this->incommingPackets.pPacketLengthInByte[0];
+        UDPPacket = new igtlUint8[totMsgLen];
+        memcpy(UDPPacket, this->incommingPackets.pBsBuf.data(), totMsgLen);
+        this->incommingPackets.pPacketLengthInByte.erase(this->incommingPackets.pPacketLengthInByte.begin());
+        this->incommingPackets.pBsBuf.erase(this->incommingPackets.pBsBuf.begin(), this->incommingPackets.pBsBuf.begin()+totMsgLen);
+        this->incommingPackets.totalLength -= totMsgLen;
+      }
+      else
+      {
+        int packetNum = incommingPackets.pPacketLengthInByte.size();
+        totMsgLen = this->incommingPackets.pPacketLengthInByte[packetNum-1];
+        UDPPacket = new igtlUint8[totMsgLen];
+        memcpy(UDPPacket, this->incommingPackets.pBsBuf.data() + this->incommingPackets.pBsBuf.size()-totMsgLen, totMsgLen);
+        this->incommingPackets.pPacketLengthInByte.erase(this->incommingPackets.pPacketLengthInByte.end()-1);
+        this->incommingPackets.pBsBuf.erase(this->incommingPackets.pBsBuf.begin() + this->incommingPackets.pBsBuf.size()-totMsgLen, this->incommingPackets.pBsBuf.end());
+        this->incommingPackets.totalLength -= totMsgLen;
+      }
       this->glock->Unlock();
       // Set up the RTP header:
       igtl_uint32  rtpHdr, timeIncrement;
@@ -163,7 +186,7 @@ namespace igtl {
           messageID = BYTE_SWAP_INT32(messageID);
         }
         //this->reorderBufferMap.erase(it);
-        if (reorderBufferMap.size()>20) // get rid of the first reoderBuffer when waiting for a long time
+        if (reorderBufferMap.size()>ReorderBufferMaximumSize) // get rid of the first reoderBuffer when waiting for a long time
         {
           if(reorderBufferMap.begin()->first != messageID)
           {
@@ -226,6 +249,7 @@ namespace igtl {
               memcpy(reorderBuffer->lastFragBuffer, UDPPacket + RTP_HEADER_LENGTH+IGTL_HEADER_SIZE+extendedHeaderLength, totMsgLen-(RTP_HEADER_LENGTH+IGTL_HEADER_SIZE+extendedHeaderLength));
               reorderBuffer->receivedLastFrag = true;
               reorderBuffer->lastPacketLen = totMsgLen-(RTP_HEADER_LENGTH+IGTL_HEADER_SIZE+extendedHeaderLength);
+              curPackedMSGLocation = totMsgLen;
               status = WaitingForAnotherPacket;
             }
             else if(fragmentField>0X8000 && fragmentField<0XE000)

@@ -73,6 +73,7 @@ int main(int argc, char* argv[])
   igtl::SimpleMutexLock* glock = igtl::SimpleMutexLock::New();
   socket->JoinNetwork("127.0.0.1", port, 0); // join the local network for a client connection
   igtl::MessageRTPWrapper::Pointer rtpWrapper = igtl::MessageRTPWrapper::New();
+  rtpWrapper->SetFCFS(true);
   //std::vector<ReorderBuffer> reorderBufferVec(10, ReorderBuffer();
   //int loop = 0;
   ReadSocketAndPush info;
@@ -121,7 +122,6 @@ void* ThreadFunctionUnWrap(void* ptr)
   while(1)
   {
     parentObj.wrapper->UnWrapPacketWithTypeAndName(deviceType, trackingDeviceName);
-    igtl::Sleep(5);
   }
 }
 
