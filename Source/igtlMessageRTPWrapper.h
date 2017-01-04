@@ -28,6 +28,7 @@
 #include "igtl_header.h"
 #include "igtl_util.h"
 #include "igtlTimeStamp.h"
+#include "igtlOSUtil.h"
 
 #if defined(WIN32) || defined(_WIN32)
 #include <windows.h>
@@ -100,6 +101,12 @@ public:
   
   igtl_uint32 messageID;
   igtl_uint16 fragmentNumber;
+  
+  
+  /// The message get fragmented and sent in different packets. The packets sending should have some interval in the function
+  /// WrapMessageAndSend(), otherwize the network demanding would be too high to cause packet loss
+  /// This variable need to be set according to the network bandwidth and the RTPPayload size
+  int packetIntervalTime;
   
   std::vector<igtl_uint64> PacketSendTimeStampList;
   

@@ -41,6 +41,7 @@ namespace igtl {
     this->PacketTotalLengthList = std::vector<igtl_uint64>();
     this->wrapperTimer = igtl::TimeStamp::New();
     this->FCFS=true;
+    this->packetIntervalTime = 1;
   }
   
   MessageRTPWrapper::~MessageRTPWrapper()
@@ -313,6 +314,7 @@ namespace igtl {
         this->PacketSendTimeStampList.push_back(this->wrapperTimer->GetTimeStampInNanoseconds());
         this->PacketTotalLengthList.push_back(numByteSent);
       }
+      igtl::Sleep(this->packetIntervalTime);
       leftmessageContent = messageContentPointer + this->GetCurMSGLocation();
       leftMsgLen = MSGContentLength - this->GetCurMSGLocation();
     }while(leftMsgLen>0 && status!=igtl::MessageRTPWrapper::PacketReady); // to do when bodyMsgLen

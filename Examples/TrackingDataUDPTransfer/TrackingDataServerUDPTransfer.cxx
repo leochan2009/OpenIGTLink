@@ -138,7 +138,7 @@ int SendTrackingData(igtl::UDPServerSocket::Pointer &socket, igtl::MessageRTPWra
   status = rtpWrapper->WrapMessageAndSend(socket, (unsigned char*)trackingMsg->GetPackPointer(), trackingMsg->GetPackSize());
   //------------------------------------------------------------
   
-  igtl::Sleep(100);
+  igtl::Sleep(1);
   std::cerr<<"Send"<<std::endl;
   phi0 += 0.1;
   phi1 += 0.2;

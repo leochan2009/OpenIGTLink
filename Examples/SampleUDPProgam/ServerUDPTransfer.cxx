@@ -35,7 +35,7 @@
 #endif
 
 
-#define MAXBUFSIZE 65536 // Max UDP Packet size is 64 Kbyte
+#define MAXBUFSIZE 65000 // Max UDP Packet size is 64 Kbyte
 
 int main()
 {
@@ -100,14 +100,18 @@ int main()
   saddr.sin_port = htons(4096);
   
   // put some data in buffer
-  strcpy(buffer, "Hello world\n");
+  //strcpy(buffer, "Hello world\n");
+  for (int i =0 ; i < MAXBUFSIZE; i++)
+    buffer[i] = '1';
   
   socklen = sizeof(struct sockaddr_in);
   // receive packet from socket
   while(1)
   {
-    status = sendto(sock, buffer, strlen(buffer), 0,
+    status = sendto(sock, buffer, MAXBUFSIZE, 0,
                   (struct sockaddr *)&saddr, socklen);
+    int i = strlen(buffer);
+    int i2 = i;
   }
   
   // shutdown socket
