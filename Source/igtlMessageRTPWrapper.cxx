@@ -270,9 +270,18 @@ namespace igtl {
               glock->Lock();
               unWrappedMessages.insert(std::pair<igtl_uint32, igtl::UnWrappedMessage*>(it->first,message));
               glock->Unlock();
-              this->reorderBufferMap.erase(it);
-              delete it->second;
-              it->second = NULL;
+              std::map<igtl_uint32, igtl::ReorderBuffer*>::iterator it_forDelete= this->reorderBufferMap.begin();
+              while(it_forDelete != this->reorderBufferMap.end())
+              {
+                this->reorderBufferMap.erase(it_forDelete);
+                delete it_forDelete->second;
+                it_forDelete->second = NULL;
+                if(it_forDelete->first==it->first)
+                {
+                  break;
+                }
+                it_forDelete =this->reorderBufferMap.begin();
+              }
               status = MessageReady;
             }
           }

@@ -70,10 +70,16 @@ namespace igtl
   class UnWrappedMessage
   {
   public:
-    UnWrappedMessage(){};
+    UnWrappedMessage(){messageDataLength = 0; messagePackPointer = new unsigned char[RTP_PAYLOAD_LENGTH*(16384-2)];};
     UnWrappedMessage(UnWrappedMessage const &anotherMessage){};
-    ~UnWrappedMessage(){};
-    unsigned char messagePackPointer[RTP_PAYLOAD_LENGTH*(16384-2)];  // we use 14 bits for fragment number, 2^14 = 16384. maximum
+    ~UnWrappedMessage(){
+      if(messagePackPointer)
+      {
+        delete[] messagePackPointer;
+        messagePackPointer = NULL;
+      }
+    };
+    unsigned char* messagePackPointer;  // we use 14 bits for fragment number, 2^14 = 16384. maximum
     uint32_t messageDataLength;
   };
   
@@ -161,6 +167,7 @@ public:
   
   std::map<igtl_uint32, igtl::UnWrappedMessage*> unWrappedMessages;
   
+  igtl::SimpleMutexLock* glock;
   
   
 protected:
@@ -189,7 +196,6 @@ private:
   igtl_uint32 SSRC;
   igtl_uint32 CSRC;
   igtl_uint32 fragmentTimeIncrement;
-  igtl::SimpleMutexLock* glock;
   igtl::ReorderBuffer* reorderBuffer;
   std::map<igtl_uint32, igtl::ReorderBuffer*> reorderBufferMap;
   PacketBuffer incommingPackets;

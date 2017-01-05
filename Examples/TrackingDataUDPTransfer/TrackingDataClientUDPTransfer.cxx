@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
   socket = igtl::UDPClientSocket::New();
   //socket->JoinNetwork("226.0.0.1", port, 1);
   igtl::ConditionVariable::Pointer conditionVar = igtl::ConditionVariable::New();
-  igtl::SimpleMutexLock* glock = igtl::SimpleMutexLock::New();
+  //igtl::SimpleMutexLock* glock = igtl::SimpleMutexLock::New();
   socket->JoinNetwork("127.0.0.1", port, 0); // join the local network for a client connection
   igtl::MessageRTPWrapper::Pointer rtpWrapper = igtl::MessageRTPWrapper::New();
   rtpWrapper->SetFCFS(true);
@@ -91,22 +91,32 @@ int main(int argc, char* argv[])
   {
     if(rtpWrapper->unWrappedMessages.size())// to do: glock this session
     {
+      rtpWrapper->glock->Lock();
       igtl::TrackingDataMessage::Pointer trackingMultiPKTMSG = igtl::TrackingDataMessage::New();
       trackingMultiPKTMSG->SetHeaderVersion(IGTL_HEADER_VERSION_2);
+      
       std::map<igtl_uint32, igtl::UnWrappedMessage*>::iterator it = rtpWrapper->unWrappedMessages.begin();
       igtl::MessageHeader::Pointer header = igtl::MessageHeader::New();
       header->InitPack();
-      memcpy(header->GetPackPointer(), it->second->messagePackPointer, IGTL_HEADER_SIZE);
-      header->Unpack();
-      trackingMultiPKTMSG->SetMessageHeader(header);
-      trackingMultiPKTMSG->AllocateBuffer();
-      if (it->second->messageDataLength == trackingMultiPKTMSG->GetPackSize())
+      if (it->second->messageDataLength>=IGTL_HEADER_SIZE)
       {
-        memcpy(trackingMultiPKTMSG->GetPackPointer(), it->second->messagePackPointer, it->second->messageDataLength);
-        ReceiveTrackingData(trackingMultiPKTMSG);
+        memcpy(header->GetPackPointer(), it->second->messagePackPointer, IGTL_HEADER_SIZE);
+        header->Unpack();
+        trackingMultiPKTMSG->SetMessageHeader(header);
+        trackingMultiPKTMSG->AllocateBuffer();
+        if (it->second->messageDataLength == trackingMultiPKTMSG->GetPackSize())
+        {
+          memcpy(trackingMultiPKTMSG->GetPackPointer(), it->second->messagePackPointer, it->second->messageDataLength);
+          ReceiveTrackingData(trackingMultiPKTMSG);
+        }
+        rtpWrapper->unWrappedMessages.erase(it);
+        if(it->second && it->second->messagePackPointer)
+        {
+          delete it->second;
+          it->second = NULL;
+        }
+        rtpWrapper->glock->Unlock();
       }
-      rtpWrapper->unWrappedMessages.erase(it);
-      delete it->second;
     }
   }
 }
@@ -156,21 +166,24 @@ int ReceiveTrackingData(igtl::TrackingDataMessage::Pointer& trackingMSG)
     {
     int nElements = trackingMSG->GetNumberOfTrackingDataElements();
     for (int i = 0; i < nElements; i ++)
-      {
+    {
       igtl::TrackingDataElement::Pointer trackingElement;
       trackingMSG->GetTrackingDataElement(i, trackingElement);
 
       igtl::Matrix4x4 matrix;
-      trackingElement->GetMatrix(matrix);
+      if (trackingElement.GetPointer())
+      {
+        trackingElement->GetMatrix(matrix);
 
 
-      std::cerr << "========== Element #" << i << " ==========" << std::endl;
-      std::cerr << " Name       : " << trackingElement->GetName() << std::endl;
-      std::cerr << " Type       : " << (int) trackingElement->GetType() << std::endl;
-      std::cerr << " Matrix : " << std::endl;
-      igtl::PrintMatrix(matrix);
-      std::cerr << "================================" << std::endl;
+        std::cerr << "========== Element #" << i << " ==========" << std::endl;
+        std::cerr << " Name       : " << trackingElement->GetName() << std::endl;
+        std::cerr << " Type       : " << (int) trackingElement->GetType() << std::endl;
+        std::cerr << " Matrix : " << std::endl;
+        igtl::PrintMatrix(matrix);
+        std::cerr << "================================" << std::endl;
       }
+    }
     return 1;
     }
   return 0;
