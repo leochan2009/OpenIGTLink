@@ -193,11 +193,28 @@ IF (${OpenIGTLink_PROTOCOL_VERSION} GREATER "1" )
     igtlUDPClientSocket.h
     igtlUDPServerSocket.h
   )
-  IF( MSVC OR ${CMAKE_GENERATOR} MATCHES "Xcode" )
-    LIST(APPEND OpenIGTLink_INCLUDE_FILES
+  IF ( ${OpenIGTLink_PROTOCOL_VERSION} GREATER "2")
+    SET(OpenIGTLink_SOURCES
+      ${OpenIGTLink_SOURCES}
+      igtlCommandMessage.cxx
+      igtlutil/igtl_command.c
+    )
+    SET(OpenIGTLink_INCLUDE_FILES
+      ${OpenIGTLink_INCLUDE_FILES}
       igtlCommandMessage.h
       igtlutil/igtl_command.h
-      )
+    )
+  ENDIF ( ${OpenIGTLink_PROTOCOL_VERSION} GREATER "2")
+
+  IF( MSVC OR ${CMAKE_GENERATOR} MATCHES "Xcode" )
+    ADD_LIBRARY(OpenIGTLink
+      ${OpenIGTLink_SOURCES}
+      ${OpenIGTLink_INCLUDE_FILES}
+    )
+    ELSE ()
+      ADD_LIBRARY(OpenIGTLink
+      ${OpenIGTLink_SOURCES}
+    )
   ENDIF()
 ENDIF()
 

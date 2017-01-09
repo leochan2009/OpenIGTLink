@@ -66,7 +66,7 @@ VideoMessage::VideoMessage():
   m_FrameHeader = NULL;
   m_Frame       = NULL;
 
-  m_DefaultBodyType  = "Video";
+  m_SendMessageType  = "Video";
 
   ScalarSizeTable[0] = 0;
   ScalarSizeTable[1] = 0;
