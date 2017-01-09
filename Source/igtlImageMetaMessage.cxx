@@ -189,10 +189,9 @@ igtlUint8 ImageMetaElement::GetScalarType()
 //----------------------------------------------------------------------
 // igtl::ImageMetaMessage class
 
-ImageMetaMessage::ImageMetaMessage():
-  MessageBase()
+ImageMetaMessage::ImageMetaMessage()
 {
-  this->m_DefaultBodyType = "IMGMETA";
+  this->m_SendMessageType = "IMGMETA";
   this->m_ImageMetaList.clear();
 }
 
@@ -230,21 +229,19 @@ void ImageMetaMessage::GetImageMetaElement(int index, ImageMetaElement::Pointer&
 }
 
 
-int ImageMetaMessage::GetBodyPackSize()
+int ImageMetaMessage::CalculateContentBufferSize()
 {
   // The body size sum of the header size and status message size.
   return IGTL_IMGMETA_ELEMENT_SIZE * this->m_ImageMetaList.size();
 }
 
 
-int ImageMetaMessage::PackBody()
+int ImageMetaMessage::PackContent()
 {
-  // allocate pack
-  AllocatePack();
+  // Allocate buffer
+  AllocateBuffer();
   
-  igtl_imgmeta_element* element;
-
-  element = (igtl_imgmeta_element*)this->m_Body;
+  igtl_imgmeta_element* element = (igtl_imgmeta_element*)this->m_Content;
 
   std::vector<ImageMetaElement::Pointer>::iterator iter;
   for (iter = this->m_ImageMetaList.begin(); iter != this->m_ImageMetaList.end(); iter ++)
@@ -275,18 +272,18 @@ int ImageMetaMessage::PackBody()
     element ++;
     }
 
-  igtl_imgmeta_convert_byte_order((igtl_imgmeta_element*)this->m_Body, this->m_ImageMetaList.size());
+  igtl_imgmeta_convert_byte_order((igtl_imgmeta_element*)this->m_Content, this->m_ImageMetaList.size());
 
   return 1;
 }
 
 
-int ImageMetaMessage::UnpackBody()
+int ImageMetaMessage::UnpackContent()
 {
 
   this->m_ImageMetaList.clear();
 
-  igtl_imgmeta_element* element = (igtl_imgmeta_element*) this->m_Body;
+  igtl_imgmeta_element* element = (igtl_imgmeta_element*) this->m_Content;
   int nElement = igtl_imgmeta_get_data_n(this->m_BodySizeToRead);
 
   igtl_imgmeta_convert_byte_order(element, nElement);
@@ -297,7 +294,7 @@ int ImageMetaMessage::UnpackBody()
     ImageMetaElement::Pointer elemClass = ImageMetaElement::New();
 
     // Add '\n' at the end of each string
-    // (neccesary for a case, where a string reaches the maximum length.)
+    // (necessary for a case, where a string reaches the maximum length.)
     strbuf[IGTL_IMGMETA_LEN_NAME] = '\n';
     strncpy(strbuf, (char*)element->name, IGTL_IMGMETA_LEN_NAME);
     elemClass->SetName((const char*)strbuf);
@@ -334,8 +331,3 @@ int ImageMetaMessage::UnpackBody()
 }
 
 } // namespace igtl
-
-
-
-
-

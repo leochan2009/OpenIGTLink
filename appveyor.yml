@@ -26,6 +26,9 @@ branches:
   #whitelist
   only:
     - VideoStream
+    - master
+    - Version3-Development
+    - Test
       
 clone_depth: 1
 skip_tags: true

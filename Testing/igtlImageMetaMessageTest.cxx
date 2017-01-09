@@ -63,6 +63,7 @@ void BuildUpLabelElements()
   timestamp = igtl::TimeStamp::New();
   timestamp->SetTime((igtlUint64)1234567892);
   imageMetaSendMsg = igtl::ImageMetaMessage::New();
+  imageMetaSendMsg->SetHeaderVersion(IGTL_HEADER_VERSION_1);
   imageMetaSendMsg->SetDeviceName("DeviceName");
   imageMetaSendMsg->SetTimeStamp(timestamp);
   imageMetaSendMsg->AddImageMetaElement(imageMetaElement0);
@@ -79,18 +80,6 @@ TEST(ImageMetaMessageTest, TimeStampTrival)
   igtlUint32 tm_return; //= igtl_nanosec_to_frac(tm_forward);
   tm_return = igtl_nanosec_to_frac(tm_forward);
   EXPECT_EQ(tm_return, tm);
-  /*
-   igtlUint32 tm_nanoSecond;
-   for (int i = 100000000; i<1000000000;i=i+1)//
-  {
-    tm_forward = i;
-    tm_return = igtl_nanosec_to_frac(tm_forward);
-    tm_nanoSecond = igtl_frac_to_nanosec(tm_return);
-    if((tm_forward-tm_nanoSecond)!=0)
-    {
-      std::cerr<<" nanosecond: "<<tm_forward<<" return fraction: "<<tm_return<<" nanosecond: "<<tm_nanoSecond<<std::endl;
-    }
-  }*/
 }
 
 TEST(ImageMetaMessageTest, Pack)
@@ -124,7 +113,7 @@ TEST(ImageMetaMessageTest, Unpack)
   igtl_header *messageHeader = (igtl_header *)imageMetaReceiveMsg->GetPackPointer();
   EXPECT_STREQ(messageHeader->device_name, "DeviceName");
   EXPECT_STREQ(messageHeader->name, "IMGMETA");
-  EXPECT_EQ(messageHeader->version, 1);
+  EXPECT_EQ(messageHeader->header_version, 1);
   EXPECT_EQ(messageHeader->timestamp, 1234567892);
   EXPECT_EQ(messageHeader->body_size, IGTL_IMGMETA_ELEMENT_SIZE*3);
   
@@ -172,9 +161,9 @@ TEST(ImageMetaMessageTest, Unpack)
     EXPECT_EQ(strncmp((char*)(elem->GetPatientID()), patientID[i], 12),0);
     igtl::TimeStamp::Pointer timestamp = igtl::TimeStamp::New();
     elem->GetTimeStamp(timestamp);
-    std::cerr<<timestamp->GetTimeStampUint64()<<std::endl;
-    //EXPECT_EQ(timestamp->GetSecond(), 0);
     EXPECT_EQ(timestamp->GetNanosecond(), nanoSecond[i]);
+    EXPECT_EQ(timestamp->GetSecond(), 0);
+    
     igtlUint16 returnedSize[3] ={0,0,0};
     elem->GetSize(returnedSize);
     EXPECT_THAT(returnedSize, testing::ElementsAreArray(groundTruthSize[i]));

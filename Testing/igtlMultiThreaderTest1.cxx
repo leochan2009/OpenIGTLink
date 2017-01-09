@@ -87,7 +87,6 @@ void* ThreadFunction(void* ptr)
 
 int main(int, char * [] )
 {
-
   igtl::MutexLock::Pointer glock = igtl::MutexLock::New();
 
   int sum = 1;

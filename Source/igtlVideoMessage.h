@@ -58,7 +58,7 @@ public:
 protected:
   StartVideoDataMessage() : MessageBase()
   {
-    this->m_DefaultBodyType  = "STT_VIDEO";
+    this->m_SendMessageType  = "STT_VIDEO";
     this->m_CodecType = "H264";
   };
   ~StartVideoDataMessage();
@@ -93,7 +93,7 @@ public:
   virtual int  GetBodyPackSize() { return m_BodySizeToRead; };
 
 protected:
-  VideoMessageHeader() : MessageBase() { this->m_DefaultBodyType  = "VIDEO_HEADER"; };
+  VideoMessageHeader() : MessageBase() {};
   ~VideoMessageHeader() {};
 protected:
   virtual int  PackBody()        { AllocatePack(); return 1; };
@@ -113,7 +113,7 @@ public:
   igtlNewMacro(igtl::StopVideoMessage);
   
 protected:
-  StopVideoMessage() : MessageBase() { this->m_DefaultBodyType  = "STP_VIDEO"; };
+  StopVideoMessage() : MessageBase() { this->m_SendMessageType  = "STP_VIDEO"; };
   ~StopVideoMessage() {};
 protected:
   virtual int  GetBodyPackSize() { return 0; };
@@ -289,6 +289,8 @@ public:
 
   /// A table to look up the size of a given scalar type.
   int ScalarSizeTable[12];
+  
+  int m_PackSize;
 };
 
 
