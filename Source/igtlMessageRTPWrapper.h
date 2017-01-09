@@ -201,6 +201,7 @@ private:
   PacketBuffer incommingPackets;
   igtl::TimeStamp::Pointer wrapperTimer;
   bool FCFS; //first come first serve
+  void SleepInNanoSecond(int nanoSecond);
 };
 
 

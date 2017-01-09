@@ -323,14 +323,34 @@ namespace igtl {
         this->PacketSendTimeStampList.push_back(this->wrapperTimer->GetTimeStampInNanoseconds());
         this->PacketTotalLengthList.push_back(numByteSent);
       }
-      igtl::Sleep(this->packetIntervalTime);
+      this->SleepInNanoSecond(this->packetIntervalTime);
       leftmessageContent = messageContentPointer + this->GetCurMSGLocation();
       leftMsgLen = MSGContentLength - this->GetCurMSGLocation();
     }while(leftMsgLen>0 && status!=igtl::MessageRTPWrapper::PacketReady); // to do when bodyMsgLen
     return 1;
   }
   
-  
+  void MessageRTPWrapper::SleepInNanoSecond(int nanoSecond)
+  {
+#if defined(_WIN32) && !defined(__CYGWIN__)
+    
+    // Call Windows Native Sleep() function
+    //::Sleep(nanoSecond/1000);
+    
+#else
+    
+    struct timespec req;
+    req.tv_sec  = (int) nanoSecond/1000000000;
+    req.tv_nsec = nanoSecond % 1000000000;
+    
+    while ((nanosleep(&req, &req) == -1) && (errno == EINTR))
+    {
+      continue;
+    }
+    
+#endif
+  }
+
   // SSRC should be set only once before wraping the message in a transmission session.
   // CSRC should be set when messages from different devices are packed into the same Packet.
   // this special header is here for the compatiblity with standard RTP protocal.
