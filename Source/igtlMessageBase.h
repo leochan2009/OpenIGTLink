@@ -315,15 +315,10 @@ namespace igtl
 
     /// The size of the body to be read. This function must be called
     /// after the message header is set.
-    int            m_BodySizeToRead;
-<<<<<<< HEAD
-    
+    int            m_BodySizeToRead;    
     
     igtl_uint64    m_CRC;
     
-=======
-
->>>>>>> master
     /// A character string for the send device type (message type).
     std::string    m_SendMessageType;
 
@@ -376,14 +371,10 @@ namespace igtl
 
     /// Message ID
     igtlUint32 m_MessageId;
-<<<<<<< HEAD
     
     /// Reserved Bytes
     igtlUint16 m_ReservedBytes;
     
-=======
-
->>>>>>> master
     /// Vector storing the meta data header entries
     std::vector<igtl_metadata_header_entry> m_MetaDataHeaderEntries;
 
