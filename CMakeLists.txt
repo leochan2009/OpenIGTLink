@@ -228,6 +228,17 @@ SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${OpenIGTLink_REQUIR
 SET(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} ${OpenIGTLink_REQUIRED_LINK_FLAGS}")
 
 
+# Websocket
+OPTION(BUILD_WEBSOCKET "Build the Websocket." ON)
+SET(OpenIGTLink_BUILD_WEBSOCKET "1")
+IF(BUILD_WEBSOCKET)
+  ADD_SUBDIRECTORY(WebSocket)
+  INCLUDE (${CMAKE_ROOT}/Modules/Dart.cmake)
+ELSE()
+  SET(OpenIGTLink_BUILD_WEBSOCKET "0")  
+ENDIF()
+
+
 #-----------------------------------------------------------------------------
 # Configure Subdirectories
 
@@ -245,6 +256,7 @@ export(TARGETS
   FILE "${OpenIGTLink_LIBRARY_TARGETS_FILE}"
   )
 
+#-----------------------------------------------------------------------------
 
 #-----------------------------------------------------------------------------
 # Tests

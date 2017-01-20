@@ -185,7 +185,7 @@ IF (${OpenIGTLink_PROTOCOL_VERSION} GREATER "1" )
 ENDIF()
 
 # Add support for OpenIGTLink version 3
-IF( ${OpenIGTLink_PROTOCOL_VERSION} GREATER "2" )
+IF(${OpenIGTLink_PROTOCOL_VERSION} GREATER "2" )
   LIST(APPEND OpenIGTLink_SOURCES
     igtlCommandMessage.cxx
     igtlQueryMessage.cxx
@@ -202,9 +202,75 @@ IF( ${OpenIGTLink_PROTOCOL_VERSION} GREATER "2" )
   ENDIF()
 ENDIF()
 
+IF(BUILD_WEBSOCKET)
+  set (Boost_FIND_REQUIRED TRUE)
+  set (Boost_FIND_QUIETLY TRUE)
+  set (Boost_DEBUG FALSE)
+  set (Boost_USE_MULTITHREADED TRUE)
+  set (Boost_ADDITIONAL_VERSIONS "1.39.0" "1.40.0" "1.41.0" "1.42.0" "1.43.0" "1.44.0" "1.46.1") # todo: someone who knows better spesify these!
+  message("into Build WebSocket")
+  set (WEBSOCKETPP_BOOST_LIBS system thread random)
+  find_package (Boost 1.39.0 COMPONENTS "${WEBSOCKETPP_BOOST_LIBS}")
+  if (Boost_FOUND)
+    message("Boost found")
+    # Boost is a project wide global dependency.
+    include_directories (${Boost_INCLUDE_DIRS})
+    link_directories (${Boost_LIBRARY_DIRS})
+    message("${Boost_INCLUDE_DIRS}")
+    message("${Boost_LIBRARIES}")
+    foreach (include_dir ${Boost_INCLUDE_DIRS})
+
+    endforeach ()
+    message (STATUS "-- Library Directories")
+    foreach (library_dir ${Boost_LIBRARY_DIRS})
+    message (STATUS "       " ${library_dir})
+    endforeach ()
+    message (STATUS "-- Libraries")
+    foreach (boost_lib ${Boost_LIBRARIES})
+    message (STATUS "       " ${boost_lib})
+    endforeach ()
+    message ("")
+  else ()
+    message (FATAL_ERROR "Failed to find required dependency: boost")
+  endif ()
+  find_package(OpenSSL)
+  find_package(ZLIB)
+
+  LIST(APPEND LINK_LIBS
+    ${LINK_LIBS}
+    ${Boost_LIBRARIES}
+  )
+  message(${Boost_LIBRARIES})
+  SET(OpenIGTLink_INCLUDE_DIRS
+    ${OpenIGTLink_INCLUDE_DIRS}
+    ${CMAKE_BINARY_DIR}/WebSocket/Source
+    ${Boost_INCLUDE_DIRS}
+  )
+  LIST(APPEND OpenIGTLink_SOURCES
+    igtlWebSocket.cxx
+  )
+  LIST(APPEND OpenIGTLink_INCLUDE_FILES
+    igtlWebSocket.h
+  )
+  add_definitions (-D_WEBSOCKETPP_CPP11_STL_)
+  if (ENABLE_CPP11)
+    if (MSVC)
+      add_definitions (-D_WEBSOCKETPP_CPP11_FUNCTIONAL_)
+      add_definitions (-D_WEBSOCKETPP_CPP11_SYSTEM_ERROR_)
+      add_definitions (-D_WEBSOCKETPP_CPP11_RANDOM_DEVICE_)
+      add_definitions (-D_WEBSOCKETPP_CPP11_MEMORY_)
+    else()
+      add_definitions (-D_WEBSOCKETPP_CPP11_STL_)
+    endif()
+  endif ()
+  ADD_SUBDIRECTORY(${CMAKE_BINARY_DIR}/WebSocket/Source ${CMAKE_BINARY_DIR}/bin)
+ENDIF()
+
+
+
 ADD_LIBRARY(OpenIGTLink ${OpenIGTLink_SOURCES} ${OpenIGTLink_INCLUDE_FILES})
 target_include_directories(OpenIGTLink ${OpenIGTLink_INCLUDE_DIRS})
-TARGET_LINK_LIBRARIES(OpenIGTLink PUBLIC ${LINK_LIBS})
+TARGET_LINK_LIBRARIES(OpenIGTLink PUBLIC ${LINK_LIBS} ${Boost_LIBRARIES})
 
 IF(MSVC)
   target_compile_options(OpenIGTLink PRIVATE /MP)
