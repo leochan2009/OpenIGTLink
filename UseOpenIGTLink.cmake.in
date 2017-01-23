@@ -22,3 +22,6 @@ INCLUDE_DIRECTORIES(BEFORE ${OpenIGTLink_INCLUDE_DIRS})
 
 # Load the OpenIGTLink targets
 include(${OpenIGTLink_LIBRARY_TARGETS_FILE})
+SET(CMAKE_PREFIX_PATH "${CMAKE_BINARY_DIR}/websocketpp")
+find_package(WebSocket REQUIRED)
+

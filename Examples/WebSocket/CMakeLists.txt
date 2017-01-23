@@ -9,13 +9,10 @@ find_package(OpenIGTLink REQUIRED)
 
 include(${OpenIGTLink_USE_FILE})
 
-
 ## igtl::WebSocket examples
 ADD_EXECUTABLE(WebSocketServer   WebSocketServer.cxx)
-TARGET_LINK_LIBRARIES(WebSocketServer OpenIGTLink )
-include_directories (${PROJECT_BINARY_DIR}/websocketpp ${PROJECT_BINARY_DIR}/websocketpp/websocketpp)
 
-target_link_libraries(telemetry_server2 ${WEBSOCKETPP_PLATFORM_LIBS} ${Boost_LIBRARIES})
+target_link_libraries(WebSocketServer OpenIGTLink ${Boost_LIBRARIES})
 
-#ADD_EXECUTABLE(WebSocketClient   WebSocketClient.cxx)
-#TARGET_LINK_LIBRARIES(WebSocketClient OpenIGTLink)
+ADD_EXECUTABLE(WebSocketClient   WebSocketClient.cxx)
+TARGET_LINK_LIBRARIES(WebSocketClient OpenIGTLink ${Boost_LIBRARIES})

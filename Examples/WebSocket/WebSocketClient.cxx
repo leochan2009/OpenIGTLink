@@ -162,14 +162,14 @@ int main(int argc, char* argv[]) {
      docroot.append("/");
    }
   
-    s.CreateHTTPServer(docroot, port); // 100 ms interval
+    //s.crea(docroot, port, 100); // 100 ms interval
     igtl::MutexLock::Pointer glock = igtl::MutexLock::New();
     while (1)
     {
+      glock->Lock();
       igtl::TrackingDataMessage::Pointer trackingMsg;
       trackingMsg = igtl::TrackingDataMessage::New();
       trackingMsg->SetDeviceName("Tracker");
-      glock->Lock();
       PackTrackingData(trackingMsg);
       s.Send(trackingMsg->GetPackPointer(), trackingMsg->GetPackSize());
       glock->Unlock();
