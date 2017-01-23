@@ -6,10 +6,11 @@ include(ExternalProject)
 
 ExternalProject_Add(WebSocketpp
   GIT_REPOSITORY https://github.com/leochan2009/websocketpp.git
-  GIT_TAG 378437aecdcb1dfe62096ffd5d944bf1f640ccc3
-  SOURCE_DIR        "${PROJECT_BINARY_DIR}/Source"
+  GIT_TAG aef02b67364dc3b582f8389f6d467fd825fea5ed
+  SOURCE_DIR        "${CMAKE_BINARY_DIR}/websocketpp"
+  BINARY_DIR        "${CMAKE_BINARY_DIR}/websocketpp-build"
   CONFIGURE_COMMAND ""
-  BUILD_COMMAND     ""
+  BUILD_COMMAND ""
   INSTALL_COMMAND   ""
   TEST_COMMAND      ""
 )

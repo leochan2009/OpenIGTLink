@@ -10,9 +10,9 @@
 #define igtlWebSocket_h
 
 
-#include "WebSocket/Source/websocketpp/config/asio_no_tls.hpp"
+#include "websocketpp/config/asio_no_tls.hpp"
 
-#include "WebSocket/Source/websocketpp/server.hpp"
+#include "websocketpp/server.hpp"
 
 #include <fstream>
 #include <iostream>

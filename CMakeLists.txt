@@ -232,8 +232,15 @@ SET(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} ${OpenIGTLink_REQUIR
 OPTION(BUILD_WEBSOCKET "Build the Websocket." ON)
 SET(OpenIGTLink_BUILD_WEBSOCKET "1")
 IF(BUILD_WEBSOCKET)
-  ADD_SUBDIRECTORY(WebSocket)
-  INCLUDE (${CMAKE_ROOT}/Modules/Dart.cmake)
+  # Download and unpack Websocket at configure time
+	configure_file(CMakeListsWebSocket.txt.in
+									 webSocketDownload/CMakeLists.txt)
+	execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" . 
+			WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/webSocketDownload" )								 
+	execute_process(COMMAND "${CMAKE_COMMAND}" --build . 
+			WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/webSocketDownload" )	
+	ADD_SUBDIRECTORY(${PROJECT_BINARY_DIR}/websocketpp ${PROJECT_BINARY_DIR})			
+		
 ELSE()
   SET(OpenIGTLink_BUILD_WEBSOCKET "0")  
 ENDIF()
@@ -260,7 +267,7 @@ export(TARGETS
 
 #-----------------------------------------------------------------------------
 # Tests
-OPTION(BUILD_TESTING "Build the testing tree." ON)
+OPTION(BUILD_TESTING "Build the testing tree." OFF)
 SET(OpenIGTLink_BUILD_TESTING ${BUILD_TESTING})
 IF(OpenIGTLink_BUILD_TESTING)
   ENABLE_TESTING()
