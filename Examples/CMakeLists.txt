@@ -30,6 +30,13 @@ if (${OpenIGTLink_PROTOCOL_VERSION} GREATER 1)
     )
 endif (${OpenIGTLink_PROTOCOL_VERSION} GREATER 1)
 
+IF(BUILD_WEBSOCKET)
+	SET(EXAMPLE_DIRS
+    ${EXAMPLE_DIRS}
+    WebSocket
+  )
+ENDIF()
+
 ## Imager program isn't supported by QNX
 if(NOT OpenIGTLink_PLATFORM_QNX)
   SUBDIRS(
