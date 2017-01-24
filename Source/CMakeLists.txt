@@ -204,7 +204,8 @@ ENDIF()
 
 IF(BUILD_WEBSOCKET)
   LIST(APPEND OpenIGTLink_SOURCES
-    igtlWebSocket.cxx
+    igtlWebServerSocket.cxx
+    igtlWebClientSocket.cxx
   )
 ENDIF()
 

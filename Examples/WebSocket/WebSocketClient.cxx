@@ -1,5 +1,5 @@
 
-#include "igtlWebSocket.h"
+#include "igtlWebClientSocket.h"
 
 #include <iostream>
 #include <math.h>
@@ -9,7 +9,7 @@
 #include "igtlOSUtil.h"
 #include "igtlMessageHeader.h"
 #include "igtlImageMessage.h"
-#include "igtlServerSocket.h"
+
 #include "igtlTrackingDataMessage.h"
 #include "igtlMultiThreader.h"
 
@@ -40,141 +40,71 @@
  * requests.
  */
 
-void GetRandomTestMatrix(igtl::Matrix4x4& matrix, float phi, float theta);
-
-
-int PackTrackingData(igtl::TrackingDataMessage::Pointer trackingMsg)
+int ReceiveTrackingData(igtl::TrackingDataMessage::Pointer trackingData)
 {
+  std::cerr << "Receiving TDATA data type." << std::endl;
   
-  static float phi0   = 0.0;
-  static float theta0 = 0.0;
-  static float phi1   = 0.0;
-  static float theta1 = 0.0;
-  static float phi2   = 0.0;
-  static float theta2 = 0.0;
+  //------------------------------------------------------------
+  // Allocate TrackingData Message Class
+  int c = trackingData->Unpack(1);
   
-  igtl::TrackingDataElement::Pointer trackElement0;
-  trackElement0 = igtl::TrackingDataElement::New();
-  trackElement0->SetName("Channel 0");
-  trackElement0->SetType(igtl::TrackingDataElement::TYPE_TRACKER);
-  
-  igtl::TrackingDataElement::Pointer trackElement1;
-  trackElement1 = igtl::TrackingDataElement::New();
-  trackElement1->SetName("Channel 1");
-  trackElement1->SetType(igtl::TrackingDataElement::TYPE_6D);
-  
-  igtl::TrackingDataElement::Pointer trackElement2;
-  trackElement2 = igtl::TrackingDataElement::New();
-  trackElement2->SetName("Channel 2");
-  trackElement2->SetType(igtl::TrackingDataElement::TYPE_5D);
-  
-  trackingMsg->AddTrackingDataElement(trackElement0);
-  trackingMsg->AddTrackingDataElement(trackElement1);
-  trackingMsg->AddTrackingDataElement(trackElement2);
-  
-  igtl::Matrix4x4 matrix;
-  igtl::TrackingDataElement::Pointer ptr;
-  
-  // Channel 0
-  trackingMsg->GetTrackingDataElement(0, ptr);
-  GetRandomTestMatrix(matrix, phi0, theta0);
-  ptr->SetMatrix(matrix);
-  
-  // Channel 1
-  trackingMsg->GetTrackingDataElement(1, ptr);
-  GetRandomTestMatrix(matrix, phi1, theta1);
-  ptr->SetMatrix(matrix);
-  
-  // Channel 2
-  trackingMsg->GetTrackingDataElement(2, ptr);
-  GetRandomTestMatrix(matrix, phi2, theta2);
-  ptr->SetMatrix(matrix);
-  
-  trackingMsg->Pack();
-  
-  phi0 += 0.1;
-  phi1 += 0.2;
-  phi2 += 0.3;
-  theta0 += 0.2;
-  theta1 += 0.1;
-  theta2 += 0.05;
-  
+  if (c & igtl::MessageHeader::UNPACK_BODY) // if CRC check is OK
+  {
+    int nElements = trackingData->GetNumberOfTrackingDataElements();
+    for (int i = 0; i < nElements; i ++)
+    {
+      igtl::TrackingDataElement::Pointer trackingElement;
+      trackingData->GetTrackingDataElement(i, trackingElement);
+      
+      igtl::Matrix4x4 matrix;
+      trackingElement->GetMatrix(matrix);
+      
+      
+      std::cerr << "========== Element #" << i << " ==========" << std::endl;
+      std::cerr << " Name       : " << trackingElement->GetName() << std::endl;
+      std::cerr << " Type       : " << (int) trackingElement->GetType() << std::endl;
+      std::cerr << " Matrix : " << std::endl;
+      igtl::PrintMatrix(matrix);
+      std::cerr << "================================" << std::endl;
+    }
+    return 1;
+  }
   return 0;
 }
-//------------------------------------------------------------
-// Function to generate random matrix.
-void GetRandomTestMatrix(igtl::Matrix4x4& matrix, float phi, float theta)
-{
-  float position[3];
-  float orientation[4];
-  
-  // random position
-  position[0] = 50.0 * cos(phi);
-  position[1] = 50.0 * sin(phi);
-  position[2] = 50.0 * cos(phi);
-  phi = phi + 0.2;
-  
-  // random orientation
-  orientation[0]=0.0;
-  orientation[1]=0.6666666666*cos(theta);
-  orientation[2]=0.577350269189626;
-  orientation[3]=0.6666666666*sin(theta);
-  theta = theta + 0.1;
-  
-  //igtl::Matrix4x4 matrix;
-  igtl::QuaternionToMatrix(orientation, matrix);
-  
-  matrix[0][3] = position[0];
-  matrix[1][3] = position[1];
-  matrix[2][3] = position[2];
-  
-  //igtl::PrintMatrix(matrix);
-}
-
 
 int main(int argc, char* argv[]) {
-    webSocketServer s;
-
-    std::string docroot;
-    uint16_t port = 9002;
+    webSocketClient s;
 
     if (argc == 1) {
-        std::cout << "Usage: telemetry_server [documentroot] [port]" << std::endl;
-        return 1;
+      std::cerr << "Usage: " << argv[0] << " <hostname> <port> <fps>"    << std::endl;
+      std::cerr << "    <hostname> : IP or host name"                    << std::endl;
+      std::cerr << "    <port>     : Port # (18944 in Slicer default)"   << std::endl;
+      return 1;
     }
     
-    if (argc >= 2) {
-        docroot = std::string(argv[1]);
-    }
-        
-    if (argc >= 3) {
-        int i = atoi(argv[2]);
-        if (i <= 0 || i > 65535) {
-            std::cout << "invalid port" << std::endl;
-            return 1;
-        }
-        
-        port = uint16_t(i);
-    }
-  
-   if(strcmp(&docroot.back(),"/") != 0)
-   {
-     docroot.append("/");
-   }
-  
-    //s.crea(docroot, port, 100); // 100 ms interval
-    igtl::MutexLock::Pointer glock = igtl::MutexLock::New();
-    while (1)
-    {
-      glock->Lock();
-      igtl::TrackingDataMessage::Pointer trackingMsg;
-      trackingMsg = igtl::TrackingDataMessage::New();
-      trackingMsg->SetDeviceName("Tracker");
-      PackTrackingData(trackingMsg);
-      s.Send(trackingMsg->GetPackPointer(), trackingMsg->GetPackSize());
-      glock->Unlock();
-      igtl::Sleep(200);
-    }
+    const char*  hostname = argv[1];
+    int    port     = atoi(argv[2]);
+    // Create a thread to recevie the message
+    igtl::TrackingDataMessage::Pointer trackingData;
+    websocketpp::lib::thread client_thread(websocketpp::lib::bind(&webSocketClient::ConnectToServer, &s, hostname, port));
 
+    void* data;
+    int length;
+    while(1)
+    {
+      length = IGTL_HEADER_SIZE;
+      data = malloc(length);
+      igtl::MessageHeader::Pointer headerMsg;
+      headerMsg = igtl::MessageHeader::New();
+      headerMsg->InitPack();
+      s.Receive(headerMsg->GetPackPointer(), length);
+      headerMsg->Unpack();
+      trackingData = igtl::TrackingDataMessage::New();
+      trackingData->SetMessageHeader(headerMsg);
+      trackingData->AllocatePack();
+      length = trackingData->GetPackBodySize();
+      s.Receive(trackingData->GetPackBodyPointer(), length);
+      ReceiveTrackingData(trackingData);
+    }
     return 0;
 }

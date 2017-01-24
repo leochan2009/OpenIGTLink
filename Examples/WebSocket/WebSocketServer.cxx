@@ -1,6 +1,5 @@
 
-#include "igtlWebSocket.h"
-
+#include "igtlWebServerSocket.h"
 #include <iostream>
 #include <math.h>
 #include <cstdlib>
@@ -133,7 +132,7 @@ void GetRandomTestMatrix(igtl::Matrix4x4& matrix, float phi, float theta)
 
 
 int main(int argc, char* argv[]) {
-    webSocketServer s;
+  
 
     std::string docroot;
     uint16_t port = 9002;
@@ -162,19 +161,25 @@ int main(int argc, char* argv[]) {
      docroot.append("/");
    }
   
-    s.CreateHTTPServer(docroot, port); // 100 ms interval
-    igtl::MutexLock::Pointer glock = igtl::MutexLock::New();
-    while (1)
-    {
-      igtl::TrackingDataMessage::Pointer trackingMsg;
-      trackingMsg = igtl::TrackingDataMessage::New();
-      trackingMsg->SetDeviceName("Tracker");
-      glock->Lock();
-      PackTrackingData(trackingMsg);
-      s.Send(trackingMsg->GetPackPointer(), trackingMsg->GetPackSize());
-      glock->Unlock();
-      igtl::Sleep(200);
+    //s.CreateHTTPServer(docroot, port); // 100 ms interval
+    webSocketServer s;
+    s.m_docroot = docroot;
+    s.port = port;
+    try{
+        websocketpp::lib::thread t(websocketpp::lib::bind(&webSocketServer::CreateHTTPServer, &s, docroot, port));
+        while (1)
+        {
+          igtl::TrackingDataMessage::Pointer trackingMsg;
+          trackingMsg = igtl::TrackingDataMessage::New();
+          trackingMsg->SetDeviceName("Tracker");
+          PackTrackingData(trackingMsg);
+          s.Send(trackingMsg->GetPackPointer(), trackingMsg->GetPackSize());
+          igtl::Sleep(200);
+        }
+        t.join();
+      }
+    catch (websocketpp::exception const & e) {
+      std::cout << e.what() << std::endl;
     }
-
     return 0;
 }
