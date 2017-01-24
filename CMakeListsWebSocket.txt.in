@@ -14,7 +14,7 @@ endif(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
 
 ExternalProject_Add(WebSocketpp
   GIT_REPOSITORY https://github.com/leochan2009/websocketpp.git
-  GIT_TAG aef02b67364dc3b582f8389f6d467fd825fea5ed
+  GIT_TAG e50fb00bec150fc1e377cab272a918c8b4453a82
   SOURCE_DIR        "${CMAKE_BINARY_DIR}/websocketpp"
   BINARY_DIR        "${CMAKE_BINARY_DIR}/websocketpp-build"
   CONFIGURE_COMMAND ConfigureCommand
