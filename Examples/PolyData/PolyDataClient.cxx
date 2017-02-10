@@ -1,10 +1,7 @@
 /*=========================================================================
 
-  Program:   Open IGT Link -- Example for Image Meta Data Client
-  Module:    $RCSfile: $
+  Program:   OpenIGTLink -- Example for Image Meta Data Client
   Language:  C++
-  Date:      $Date: $
-  Version:   $Revision: $
 
   Copyright (c) Insight Software Consortium. All rights reserved.
 
@@ -21,7 +18,6 @@
 #include <cstring>
 
 #include "igtlOSUtil.h"
-#include "igtlImageMessage.h"
 #include "igtlPolyDataMessage.h"
 #include "igtlClientSocket.h"
 
@@ -139,7 +135,7 @@ int ReceivePolyData(igtl::ClientSocket::Pointer& socket, igtl::MessageHeader::Po
     if (pointsArray.IsNotNull())
       {
       std::cerr << "  ------ Points ------" << std::endl;
-      for (unsigned int i = 0; i < pointsArray->GetNumberOfPoints(); i ++)
+      for (int i = 0; i < pointsArray->GetNumberOfPoints(); i ++)
         {
         igtlFloat32 point[3];
         pointsArray->GetPoint(i, point);

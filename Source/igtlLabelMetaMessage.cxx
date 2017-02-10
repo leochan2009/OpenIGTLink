@@ -167,10 +167,9 @@ int LabelMetaElement::SetOwner(const char* owner)
 //----------------------------------------------------------------------
 // igtl::LabelMetaMessage class
 
-LabelMetaMessage::LabelMetaMessage():
-  MessageBase()
+LabelMetaMessage::LabelMetaMessage()
 {
-  this->m_DefaultBodyType = "LBMETA";
+  this->m_SendMessageType = "LBMETA";
   this->m_LabelMetaList.clear();
 }
 
@@ -208,20 +207,20 @@ void LabelMetaMessage::GetLabelMetaElement(int index, LabelMetaElement::Pointer&
 }
 
 
-int LabelMetaMessage::GetBodyPackSize()
+int LabelMetaMessage::CalculateContentBufferSize()
 {
   // The body size sum of the header size and status message size.
   return IGTL_LBMETA_ELEMENT_SIZE * this->m_LabelMetaList.size();
 }
 
 
-int LabelMetaMessage::PackBody()
+int LabelMetaMessage::PackContent()
 {
-  // allocate pack
-  AllocatePack();
+  // Allocate buffer
+  AllocateBuffer();
   
   igtl_lbmeta_element* element;
-  element = (igtl_lbmeta_element*)this->m_Body;
+  element = (igtl_lbmeta_element*)this->m_Content;
   std::vector<LabelMetaElement::Pointer>::iterator iter;
 
   for (iter = this->m_LabelMetaList.begin(); iter != this->m_LabelMetaList.end(); iter ++)
@@ -249,18 +248,18 @@ int LabelMetaMessage::PackBody()
     element ++;
     }
 
-  igtl_lbmeta_convert_byte_order((igtl_lbmeta_element*)this->m_Body, this->m_LabelMetaList.size());
+  igtl_lbmeta_convert_byte_order((igtl_lbmeta_element*)this->m_Content, this->m_LabelMetaList.size());
 
   return 1;
 }
 
 
-int LabelMetaMessage::UnpackBody()
+int LabelMetaMessage::UnpackContent()
 {
 
   this->m_LabelMetaList.clear();
 
-  igtl_lbmeta_element* element = (igtl_lbmeta_element*) this->m_Body;
+  igtl_lbmeta_element* element = (igtl_lbmeta_element*) this->m_Content;
   int nElement = igtl_lbmeta_get_data_n(this->m_BodySizeToRead);
 
   igtl_lbmeta_convert_byte_order(element, nElement);
@@ -297,8 +296,3 @@ int LabelMetaMessage::UnpackBody()
 }
 
 } // namespace igtl
-
-
-
-
-
