@@ -1,0 +1,15 @@
+
+cmake_minimum_required(VERSION 2.8.2)
+ 
+project(LZ4-download NONE)
+include(ExternalProject)
+ExternalProject_Add(LZ4
+  GIT_REPOSITORY https://github.com/lz4/lz4.git
+  GIT_TAG 7e57c398c1b23f1631f690e0154ee4bee98e5f71
+  SOURCE_DIR        "${PROJECT_BINARY_DIR}/LZ4"
+  BINARY_DIR        "${PROJECT_BINARY_DIR}/LZ4"
+  CONFIGURE_COMMAND ""
+  BUILD_COMMAND     ""
+  INSTALL_COMMAND   ""
+  TEST_COMMAND      ""
+)

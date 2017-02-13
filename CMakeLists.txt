@@ -45,6 +45,26 @@ ENDIF()
 
 
 #-----------------------------------------------------------------------------
+# LZ4
+OPTION(BUILD_LZ4 "Build the LZ4 tree." OFF)
+SET(OpenIGTLink_BUILD_LZ4 "0")
+IF(BUILD_LZ4)
+SET(OpenIGTLink_BUILD_LZ4 "1")
+configure_file(SuperBuild/CMakeListsLZ4.txt.in
+LZ4-download/CMakeLists.txt)
+#Here the downloading project is triggered
+execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" .
+WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/LZ4-download" )
+execute_process(COMMAND "${CMAKE_COMMAND}" --build .
+WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/LZ4-download" )
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
+execute_process(COMMAND "make" WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/LZ4" )
+endif(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
+ENDIF()
+
+
+
+#-----------------------------------------------------------------------------
 # OpenIGTLink build configuration options.
 
 OPTION(BUILD_SHARED_LIBS "Build OpenIGTLink with shared libraries." OFF)

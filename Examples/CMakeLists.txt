@@ -39,6 +39,13 @@ IF(BUILD_H264)
     VideoStreaming
     )
 ENDIF()
+
+IF(BUILD_LZ4)
+	SET(EXAMPLE_DIRS
+    ${EXAMPLE_DIRS}
+    LZ4Codec
+    )
+ENDIF()
 ## Imager program isn't supported by QNX
 if(NOT OpenIGTLink_PLATFORM_QNX)
   SUBDIRS(

@@ -10,7 +10,13 @@ IF(OpenIGTLink_PLATFORM_WIN32) # for Windows
 		${LINK_LIBS}
 		"${CMAKE_BINARY_DIR}/OpenH264/openh264.lib"
 		)
-	ENDIF()  
+	ENDIF()
+  IF((${OpenIGTLink_PROTOCOL_VERSION} GREATER "2" ) AND BUILD_LZ4)
+    SET(LINK_LIBS
+    ${LINK_LIBS}
+    "${CMAKE_BINARY_DIR}/LZ4/lib/lz4.lib"
+    )
+  ENDIF()
   #For debug under win32 system, the run time check mode should be set to /RTCu for multithreading purpose
   STRING(REPLACE "/RTC1" "/RTCu" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
   SET(OpenIGTLink_REQUIRED_CXX_FLAGS ${OpenIGTLink_REQUIRED_CXX_FLAGS})
@@ -30,7 +36,13 @@ ELSE() # for POSIX-compatible OSs
 		${LINK_LIBS}
 		"${CMAKE_BINARY_DIR}/OpenH264/libopenh264.a"
 		)
-	ENDIF()  
+	ENDIF()
+  IF((${OpenIGTLink_PROTOCOL_VERSION} GREATER "2" ) AND BUILD_LZ4)
+    SET(LINK_LIBS
+    ${LINK_LIBS}
+    "${CMAKE_BINARY_DIR}/LZ4/lib/liblz4.a"
+    )
+  ENDIF()
   IF(OpenIGTLink_PLATFORM_SUNOS)
     LIST(APPEND LINK_LIBS
       ${OpenIGTLink_STD_LINK_LIBRARIES}
@@ -61,7 +73,16 @@ IF((${OpenIGTLink_PROTOCOL_VERSION} GREATER "2" ) AND BUILD_H264)
 	"${CMAKE_BINARY_DIR}/OpenH264/codec/encoder/core/inc"
 	"${CMAKE_BINARY_DIR}/OpenH264/codec/processing/interface"
 	"${CMAKE_BINARY_DIR}/OpenH264/test")
-ENDIF()  
+ENDIF()
+
+
+IF((${OpenIGTLink_PROTOCOL_VERSION} GREATER "2" ) AND BUILD_LZ4)
+  SET(OpenIGTLink_INCLUDE_DIRS
+  ${OpenIGTLink_INCLUDE_DIRS}
+  "${CMAKE_BINARY_DIR}/LZ4/lib"
+  "${CMAKE_BINARY_DIR}/LZ4/examples"
+  )
+ENDIF()
 
 SET(OpenIGTLink_SOURCES
   igtlutil/igtl_header.c
@@ -243,8 +264,15 @@ IF( ${OpenIGTLink_PROTOCOL_VERSION} GREATER "2" )
       ${CMAKE_BINARY_DIR}/OpenH264/test/sha1.h
       ${CMAKE_BINARY_DIR}/OpenH264/codec/console/common/inc/read_config.h
     )
-
 	ENDIF()
+  IF(BUILD_LZ4)
+    LIST(APPEND OpenIGTLink_SOURCES
+        igtlVideoMessage.h
+        igtlVideoMessage.cxx
+        igtlutil/igtl_video.h
+        igtlutil/igtl_video.c
+      )
+  ENDIF()
   IF( MSVC OR ${CMAKE_GENERATOR} MATCHES "Xcode" )
     LIST(APPEND OpenIGTLink_INCLUDE_FILES
       igtlCommandMessage.h
