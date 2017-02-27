@@ -37,14 +37,19 @@ IF(OpenIGTLink_USE_GTEST)
 	# Add googletest directly to our build. This adds
 	# the following targets: gtest, gtest_main, gmock
 	# and gmock_main
-	add_subdirectory("${PROJECT_BINARY_DIR}/gmock"
-									 "${PROJECT_BINARY_DIR}/gmock-build" )
-
+  execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" "-DBUILD_SHARED_LIBS:BOOL=OFF" .
+		WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/gmock" )
+  execute_process(COMMAND "${CMAKE_COMMAND}" --build .
+		WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/gmock" )
+  execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" "-DBUILD_SHARED_LIBS:BOOL=OFF" .
+		WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/gtest" )
+  execute_process(COMMAND "${CMAKE_COMMAND}" --build .
+		WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/gtest" )	
 	# The gtest/gmock targets carry header search path
 	# dependencies automatically when using CMake 2.8.11 or
 	# later. Otherwise we have to add them here ourselves.
-	include_directories("${gtest_SOURCE_DIR}/include")
-	include_directories("${gmock_SOURCE_DIR}/include")
+	include_directories("${PROJECT_BINARY_DIR}/gtest/include")
+	include_directories("${PROJECT_BINARY_DIR}/gmock/include")
 #---------------
 ENDIF()
 
@@ -89,7 +94,11 @@ ENDIF()
 
 
 IF(USE_GTEST)
-  SET(GTEST_LINK OpenIGTLink gtest_main gtest gmock_main gmock)
+  IF(OpenIGTLink_PLATFORM_WIN32) # for Windows
+    SET(GTEST_LINK OpenIGTLink "${PROJECT_BINARY_DIR}/gtest/${CMAKE_CFG_INTDIR}/gtest_main.lib" "${PROJECT_BINARY_DIR}/gtest/${CMAKE_CFG_INTDIR}/gtest.lib" "${PROJECT_BINARY_DIR}/gmock/${CMAKE_CFG_INTDIR}/gmock_main.lib" "${PROJECT_BINARY_DIR}/gmock/${CMAKE_CFG_INTDIR}/gmock.lib")
+  ELSE() # for POSIX-compatible OSs
+    SET(GTEST_LINK OpenIGTLink "${PROJECT_BINARY_DIR}/gtest/${CMAKE_CFG_INTDIR}/libgtest_main.a" "${PROJECT_BINARY_DIR}/gtest/${CMAKE_CFG_INTDIR}/libgtest.a" "${PROJECT_BINARY_DIR}/gmock/${CMAKE_CFG_INTDIR}/libgmock_main.a" "${PROJECT_BINARY_DIR}/gmock/${CMAKE_CFG_INTDIR}/libgmock.a")
+  ENDIF()
 ELSE()
   SET(GTEST_LINK OpenIGTLink)
 ENDIF()
