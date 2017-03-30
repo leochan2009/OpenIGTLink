@@ -191,7 +191,6 @@ IF ( ${OpenIGTLink_PROTOCOL_VERSION} GREATER "2")
     igtlMessageRTPWrapper.cxx
     igtlUDPClientSocket.cxx
     igtlUDPServerSocket.cxx
-    igtlRTSPServer.cxx
     )
   SET(OpenIGTLink_INCLUDE_FILES
     ${OpenIGTLink_INCLUDE_FILES}
@@ -201,7 +200,6 @@ IF ( ${OpenIGTLink_PROTOCOL_VERSION} GREATER "2")
     igtlMessageRTPWrapper.h
     igtlUDPClientSocket.h
     igtlUDPServerSocket.h
-    igtlRTSPServer.h
     )
 ENDIF ( ${OpenIGTLink_PROTOCOL_VERSION} GREATER "2")
 
