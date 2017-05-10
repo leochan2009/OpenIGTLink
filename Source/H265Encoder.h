@@ -38,91 +38,96 @@
 #include "igtlVideoMessage.h"
 #include "igtlTimeStamp.h"
 #if defined ( __cplusplus)
-extern "C"
+
+namespace H265EncoderNameSpace
 {
-#include "x265.h"
-};
-#else
-#include "x265.h"
-#endif
+  // To avoid the redefinition of ENUM types. Especially when the decode and encode library are from different developers.
+  // Normally it is not necessary if they arefrom the same developers
+  // for example, NalUnitType is defined in both the encoder and decoder.
+  extern "C"
+  {
+  #include "x265.h"
+  };
+  #else
+  #include "x265.h"
+  #endif
+}
+  using namespace std;
 
-using namespace std;
-
-/**
- * @brief Enumerate  video frame type
- * This is H265 related frame types.
- */
-typedef enum {
-  H265FrameTypeInvalid,    ///< encoder not ready or parameters are invalidate
-  H265FrameTypeIDR,        ///< IDR frame in H.264
-  H265FrameTypeI,          ///< I frame type
-  H265FrameTypeP,          ///< P frame type
-  H265FrameTypeSkip,       ///< skip the frame based encoder kernel
-  H265FrameTypeIPMixed     ///< a frame where I and P slices are mixing, not supported yet
-} H265VideoFrameType;
-
-class H265Encoder: public GenericEncoder
-{
-public:
-  H265Encoder(char * configFile = NULL);
-  ~H265Encoder();
-  
-  virtual int FillSpecificParameters();
-  
   /**
-   * @brief Enumerate the type of rate control mode
-    typedef enum {
-      RC_QUALITY_MODE = 0,     ///< quality mode
-      RC_BITRATE_MODE = 1,     ///< bitrate mode
-      RC_BUFFERBASED_MODE = 2, ///< no bitrate control,only using buffer status,adjust the video quality
-      RC_TIMESTAMP_MODE = 3, //rate control based timestamp
-      RC_BITRATE_MODE_POST_SKIP = 4, ///< this is in-building RC MODE, WILL BE DELETED after algorithm tuning!
-      RC_OFF_MODE = -1,         ///< rate control off mode
-    } RC_MODES;
+   * @brief Enumerate  video frame type
+   * This is H265 related frame types.
    */
-  virtual int SetRCMode(int value);
-  
-  virtual int SetKeyFrameDistance(int frameNum){return -1;};
-  
-  virtual int SetQP(int maxQP, int minQP);
-  
-  /**
-   Parse the configuration file to initialize the encoder and server.
-   */
-  virtual int InitializeEncoder();
-  
-  virtual int ConvertToLocalImageFormat(SourcePicture* pSrcPic);
-  
-  /**
-   Encode a frame, for performance issue, before encode the frame, make sure the frame pointer is updated with a new frame.
-   Otherwize, the old frame will be encoded.
-   */
-  virtual int EncodeSingleFrameIntoVideoMSG(SourcePicture* pSrcPic, igtl::VideoMessage* videoMessage, bool isGrayImage = false );
-  
-  virtual int SetPicWidthAndHeight(unsigned int Width, unsigned int Height);
-  
-  virtual unsigned int GetPicWidth(){return this->sSvcParam->sourceWidth;};
-  
-  virtual unsigned int GetPicHeight(){return this->sSvcParam->sourceHeight;};
-  
-  virtual int SetLosslessLink(bool linkMethod);
-  
-  virtual int SetSpeed(int speed);
-  
-  virtual int SetRCTaregetBitRate(unsigned int bitRate);
-  
-  virtual bool GetLosslessLink(){return this->sSvcParam->bLossless;};
-  
-private:
-  
-  x265_encoder*  pSVCEncoder;
-  
-  x265_param* sSvcParam;
-  
-  x265_nal *pNals;
-  
-  x265_picture* H265SrcPicture;
-  
-};
+  typedef enum {
+    H265FrameTypeInvalid,    ///< encoder not ready or parameters are invalidate
+    H265FrameTypeIDR,        ///< IDR frame in H.264
+    H265FrameTypeI,          ///< I frame type
+    H265FrameTypeP,          ///< P frame type
+    H265FrameTypeSkip,       ///< skip the frame based encoder kernel
+    H265FrameTypeIPMixed     ///< a frame where I and P slices are mixing, not supported yet
+  } H265VideoFrameType;
 
+  class H265Encoder: public GenericEncoder
+  {
+  public:
+    H265Encoder(char * configFile = NULL);
+    ~H265Encoder();
+    
+    virtual int FillSpecificParameters();
+    
+    /**
+     * @brief Enumerate the type of rate control mode
+      typedef enum {
+        RC_QUALITY_MODE = 0,     ///< quality mode
+        RC_BITRATE_MODE = 1,     ///< bitrate mode
+        RC_BUFFERBASED_MODE = 2, ///< no bitrate control,only using buffer status,adjust the video quality
+        RC_TIMESTAMP_MODE = 3, //rate control based timestamp
+        RC_BITRATE_MODE_POST_SKIP = 4, ///< this is in-building RC MODE, WILL BE DELETED after algorithm tuning!
+        RC_OFF_MODE = -1,         ///< rate control off mode
+      } RC_MODES;
+     */
+    virtual int SetRCMode(int value);
+    
+    virtual int SetKeyFrameDistance(int frameNum){return -1;};
+    
+    virtual int SetQP(int maxQP, int minQP);
+    
+    /**
+     Parse the configuration file to initialize the encoder and server.
+     */
+    virtual int InitializeEncoder();
+    
+    virtual int ConvertToLocalImageFormat(SourcePicture* pSrcPic);
+    
+    /**
+     Encode a frame, for performance issue, before encode the frame, make sure the frame pointer is updated with a new frame.
+     Otherwize, the old frame will be encoded.
+     */
+    virtual int EncodeSingleFrameIntoVideoMSG(SourcePicture* pSrcPic, igtl::VideoMessage* videoMessage, bool isGrayImage = false );
+    
+    virtual int SetPicWidthAndHeight(unsigned int Width, unsigned int Height);
+    
+    virtual unsigned int GetPicWidth(){return this->sSvcParam->sourceWidth;};
+    
+    virtual unsigned int GetPicHeight(){return this->sSvcParam->sourceHeight;};
+    
+    virtual int SetLosslessLink(bool linkMethod){return 0;};
+    
+    virtual int SetSpeed(int speed);
+    
+    virtual int SetRCTaregetBitRate(unsigned int bitRate);
+    
+    virtual bool GetLosslessLink(){return this->sSvcParam->bLossless;};
+    
+  private:
+    
+    H265EncoderNameSpace::x265_encoder*  pSVCEncoder;
+    
+    H265EncoderNameSpace::x265_param* sSvcParam;
+    
+    H265EncoderNameSpace::x265_nal *pNals;
+    
+    H265EncoderNameSpace::x265_picture* H265SrcPicture;
+    
+  };
 #endif

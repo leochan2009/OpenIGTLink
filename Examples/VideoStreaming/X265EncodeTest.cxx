@@ -60,6 +60,13 @@
 #include "vpx_dsp/ssim.h"
 #endif
 
+#if OpenIGTLink_LINK_X265
+
+  #include "H265Encoder.h"
+  #include "H265Decoder.h"
+
+#endif
+
 int startEncodeTime = 0;
 int endEncodeTime = 0;
 int startDecodeTime = 0;
@@ -240,7 +247,7 @@ void TestWithVersion(int version, GenericEncoder* videoStreamEncoder, GenericDec
 #endif
       while(fread (imagePointer, 1, kiPicResSize*3/2, pFileYUV ) == kiPicResSize*3/2 && totalFrame<inputFrameNum)
       {
-        bool isGrayImage = true;
+        bool isGrayImage = false;
         igtl::VideoMessage::Pointer videoMessageSend = igtl::VideoMessage::New();
         videoMessageSend->SetHeaderVersion(version);
         startEncodeTime = videoStreamDecoder->getCurrentTime();
@@ -332,16 +339,16 @@ void X265SpeedEvaluation()
   {
     for (int i = 0; i<22; i=i+2)
     {
-#if OpenIGTLink_BUILD_VPX
+#if OpenIGTLink_LINK_X265
       startIndex = i*100;
       pEval = fopen (evalFileName.c_str(), "a");
-      std::string title = "VP9CodecSpeedAndRateEvalWithSpeed-";
+      std::string title = "H265CodecSpeedAndRateEvalWithSpeed-";
       title.append(ToString(speed)).append("\r\n");
       fwrite(title.c_str(),1, title.size(),pEval);
       fclose(pEval);
       std::map<std::string, std::string> values, times;
-      VPXEncoder* videoStreamEncoder = new VPXEncoder();
-      VPXDecoder* videoStreamDecoder = new VPXDecoder();
+      H265Encoder* videoStreamEncoder = new H265Encoder();
+      H265Decoder* videoStreamDecoder = new H265Decoder();
       videoStreamEncoder->SetPicWidthAndHeight(Width, Height);
       videoStreamEncoder->SetLosslessLink(false);
       videoStreamEncoder->SetRCMode(1); // 1 is VPX_CBR
@@ -362,8 +369,8 @@ void X265SpeedEvaluation()
       {
         std::cerr<<it->first<<" "<<it->second<<" "<<it2->first<<" "<<it2->second<<std::endl;
       }
-      videoStreamDecoder->~VPXDecoder();
-      videoStreamEncoder->~VPXEncoder();
+      videoStreamDecoder->~H265Decoder();
+      videoStreamEncoder->~H265Encoder();
 #endif
     }
   }
@@ -378,116 +385,7 @@ extern "C"
 #endif
 
 int main(int argc, char** argv){
-  int i,j;
-  FILE *fp_src=NULL;
-  FILE *fp_dst=NULL;
-  int y_size;
-  int buff_size;
-  char *buff=NULL;
-  int ret;
-  x265_nal *pNals=NULL;
-  uint32_t iNal=0;
-  
-  x265_param* pParam=NULL;
-  x265_encoder* pHandle=NULL;
-  x265_picture *pPic_in=NULL;
-  
-  //x265_decoder* pDecHandle = NULL;
-  
-  //Encode 50 frame
-  //if set 0, encode all frame
-  int frame_num=100;
-  int csp=X265_CSP_I420;
-  //int width=1920,height=1080;
-  
-  fp_src=fopen("/Users/longquanchen/Documents/VideoStreaming/RoboticHysterectomy.yuv","rb");
-  //fp_src=fopen("../cuc_ieschool_640x360_yuv444p.yuv","rb");
-  
-  fp_dst=fopen("RoboticHysterectomy.h265","a");
-  //Check
-  if(fp_src==NULL||fp_dst==NULL){
-    return -1;
-  }
-  
-  pParam=x265_param_alloc();
-  x265_param_default(pParam);
-  pParam->bRepeatHeaders=1;//write sps,pps before keyframe
-  pParam->internalCsp=csp;
-  pParam->sourceWidth=Width;
-  pParam->sourceHeight=Height;
-  pParam->fpsNum=25;
-  pParam->fpsDenom=1;
-  //Init
-  pHandle=x265_encoder_open(pParam);
-  if(pHandle==NULL){
-    printf("x265_encoder_open err\n");
-    return 0;
-  }
-  y_size = pParam->sourceWidth * pParam->sourceHeight;
-  
-  pPic_in = x265_picture_alloc();
-  x265_picture_init(pParam,pPic_in);
-  
-  
-  //detect frame number
-  if(frame_num==0){
-    fseek(fp_src,0,SEEK_END);
-    switch(csp){
-      case X265_CSP_I444:frame_num=ftell(fp_src)/(y_size*3);break;
-      case X265_CSP_I420:frame_num=ftell(fp_src)/(y_size*3/2);break;
-      default:printf("Colorspace Not Support.\n");return -1;
-    }
-    fseek(fp_src,0,SEEK_SET);
-  }
-  igtl_uint8* imagePointer = new igtl_uint8[Width*Height*3/2];
-  memset(imagePointer, 0, Width * Height * 3 / 2);
-  //Loop to Encode
-  for( i=0;i<frame_num;i++){
-    pPic_in->poc = i;
-    pPic_in->colorSpace = X265_CSP_I420;
-    pPic_in->bitDepth = 8;
-    pPic_in->framesize = Width*Height*3/2;
-    pPic_in->height = Height;
-    pPic_in->stride[0] = Width * 1;
-    pPic_in->stride[1] = Width/2;
-    pPic_in->stride[2] = Width/2;
-    if(!(fread (imagePointer, 1, Width*Height*3/2, fp_src ) == Width*Height*3/2))
-    {
-      break;
-    }
-    pPic_in->planes[0] = imagePointer;
-    pPic_in->planes[1] = (char*)pPic_in->planes[0] + pPic_in->stride[0] * Height;
-    pPic_in->planes[2] = (char*)pPic_in->planes[1] + pPic_in->stride[0] * Height/4;
-    
-    ret=x265_encoder_encode(pHandle,&pNals,&iNal,pPic_in,NULL);
-    ret=x265_encoder_encode(pHandle,&pNals,&iNal,NULL,NULL);
-    printf("Succeed encode %5d frames\n",i);
-    pPic_in->pts = i;
-    for(j=0;j<iNal;j++){
-      printf("size in bytes %5d\n",pNals[j].sizeBytes);
-      fwrite(pNals[j].payload,1,pNals[j].sizeBytes,fp_dst);
-    }
-  }
-  //Flush Decoder
-  while(1){
-    ret=x265_encoder_encode(pHandle,&pNals,&iNal,NULL,NULL);
-    if(ret==0){
-      break;
-    }
-    printf("Flush 1 frame.\n");
-    
-    for(j=0;j<iNal;j++){
-      fwrite(pNals[j].payload,1,pNals[j].sizeBytes,fp_dst);
-    }
-  }
-  
-  x265_encoder_close(pHandle);
-  x265_picture_free(pPic_in);
-  x265_param_free(pParam);
-  free(buff);
-  fclose(fp_src);
-  fclose(fp_dst);
-  
+  X265SpeedEvaluation();
   return 0;
 }
 

@@ -41,7 +41,7 @@ void video_decode_example(const char* fileName)
 {
   Int                 poc;
   TComList<TComPic*>* pcListPic = NULL;
-  
+  ifstream bitstreamFile2("", ifstream::in | ifstream::binary);
   ifstream bitstreamFile(fileName, ifstream::in | ifstream::binary);
   if (!bitstreamFile)
   {
@@ -193,7 +193,7 @@ void video_decode_example(const char* fileName)
 
 int main(int argc, char *argv[]) {
   //init_main(argc, argv);
-  std::string input_file = "/Users/longquanchen/Desktop/Github/Slicer-build/OpenIGTLink-XcodeBuild/bin/Debug/RoboticHysterectomy.265";
+  std::string input_file = "/Users/longquanchen/Desktop/Github/Slicer-build/OpenIGTLink-XcodeBuild/bin/Debug/Test.265";
   video_decode_example(input_file.c_str());
   return 0;
 }
