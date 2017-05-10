@@ -154,7 +154,7 @@ void video_decode_example(const char* fileName)
       // write reconstruction to file
       if( bNewPicture )
       {
-        //xWriteOutput( pcListPic, nalu.m_temporalId );
+        //m_cTDecTop.xWriteOutput( pcListPic, nalu.m_temporalId );
       }
       if ( (bNewPicture || nalu.m_nalUnitType == NAL_UNIT_CODED_SLICE_CRA) && m_cTDecTop.getNoOutputPriorPicsFlag() )
       {

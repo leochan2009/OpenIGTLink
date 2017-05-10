@@ -48,13 +48,17 @@ private:
   
   virtual void ComposeByteSteam(igtl_uint8** inputData, int dimension[2], int iStride[2], igtl_uint8 *outputFrame);
   
+  int ReconstructDecodedPic(TComPic* picTop, igtl_uint8* outputFrame);
+  
   TDecTop* pDecoder;
   
   InputNALUnit nalu;
   
   AnnexBStats stats;
   
-  InputByteStream* bytestream;
+  TComList<TComPic*>* pcListPic;
+  
+  //InputByteStream* bytestream;
   
 };
 
