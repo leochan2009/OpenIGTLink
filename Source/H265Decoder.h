@@ -75,6 +75,33 @@ namespace H265DecoderNameSpace
       streamSize = size;
     }
     
+    void PrepareStreamWithProcessedNal(igtl_uint8* bitStream, igtl_uint8* nalUnit, int sSize, int nSize)
+    {
+      reset();
+      if(nalUnit && nSize>0)
+      {
+        inputStream = new igtl_uint8[sSize + nSize+4];
+        memset(inputStream,0,1);
+        memset(inputStream+1,0,1);
+        memset(inputStream+2,1,1);
+        memcpy(inputStream+3,nalUnit, nSize);
+        memcpy(inputStream+3+nSize, bitStream, sSize);
+        memset(inputStream+3+sSize+nSize,0,1);
+        memset(inputStream+4+sSize+nSize,0,1);
+        memset(inputStream+5+sSize+nSize,1,1);
+        streamSize = sSize + nSize;
+      }
+      else
+      {
+        inputStream = new igtl_uint8[sSize+4];
+        memcpy(inputStream, bitStream, sSize);
+        memset(inputStream+sSize,0,1);
+        memset(inputStream+sSize+1,0,1);
+        memset(inputStream+sSize+2,1,1);
+        streamSize = sSize;
+      }
+    }
+    
     void resetFutureBytes()
     {
       m_NumFutureBytes = 0;
@@ -144,11 +171,12 @@ namespace H265DecoderNameSpace
       }
       return val;
     }
-  private:
-    UInt m_NumFutureBytes; /* number of valid bytes in m_FutureBytes */
-    uint32_t m_FutureBytes; /* bytes that have been peeked */
     igtl_uint8 * inputStream;
     int streamSize;
+    UInt m_NumFutureBytes; /* number of valid bytes in m_FutureBytes */
+  private:
+    
+    uint32_t m_FutureBytes; /* bytes that have been peeked */
     int pos;
   };
 
@@ -170,13 +198,13 @@ namespace H265DecoderNameSpace
     
     TDecTop* pDecoder;
     
-    InputNALUnit nalu;
-    
     AnnexBStats stats;
     
     TComList<TComPic*>* pcListPic;
     
     InputByteStreamNoFile* bytestream;
+    
+    std::vector<igtl_uint8> previousStream;
     
   };
 

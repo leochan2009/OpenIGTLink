@@ -13,34 +13,34 @@
 
 #include "H265Decoder.h"
 
-  static void GetNALUnitFromByteStream(
-                     InputByteStreamNoFile& bs,
-                     vector<uint8_t>& nalUnit)
+static void GetNALUnitFromByteStream(
+                                     InputByteStreamNoFile& bs,
+                                     vector<uint8_t>& nalUnit)
+{
+  while ((bs.eofBeforeNBytes(24/8) || bs.peekBytes(24/8) != 0x000001)
+         &&     (bs.eofBeforeNBytes(32/8) || bs.peekBytes(32/8) != 0x00000001))
   {
-    while ((bs.eofBeforeNBytes(24/8) || bs.peekBytes(24/8) != 0x000001)
-           &&     (bs.eofBeforeNBytes(32/8) || bs.peekBytes(32/8) != 0x00000001))
-    {
-      uint8_t leading_zero_8bits = bs.readByte();
-      assert(leading_zero_8bits == 0);
-    }
-    if (bs.peekBytes(24/8) != 0x000001)
-    {
-      uint8_t zero_byte = bs.readByte();
-      assert(zero_byte == 0);
-    }
-    uint32_t start_code_prefix_one_3bytes = bs.readBytes(24/8);
-    assert(start_code_prefix_one_3bytes == 0x000001);
-    while (bs.eofBeforeNBytes(24/8) || bs.peekBytes(24/8) > 2)
-    {
-      nalUnit.push_back(bs.readByte());
-    }
-    while ((bs.eofBeforeNBytes(24/8) || bs.peekBytes(24/8) != 0x000001)
-           &&     (bs.eofBeforeNBytes(32/8) || bs.peekBytes(32/8) != 0x00000001))
-    {
-      uint8_t trailing_zero_8bits = bs.readByte();
-      assert(trailing_zero_8bits == 0);
-    }
+    uint8_t leading_zero_8bits = bs.readByte();
+    assert(leading_zero_8bits == 0);
   }
+  if (bs.peekBytes(24/8) != 0x000001)
+  {
+    uint8_t zero_byte = bs.readByte();
+    assert(zero_byte == 0);
+  }
+  uint32_t start_code_prefix_one_3bytes = bs.readBytes(24/8);
+  assert(start_code_prefix_one_3bytes == 0x000001);
+  while (bs.eofBeforeNBytes(24/8) || bs.peekBytes(24/8) > 2)
+  {
+    nalUnit.push_back(bs.readByte());
+  }
+  while ((bs.eofBeforeNBytes(24/8) || bs.peekBytes(24/8) != 0x000001)
+         &&     (bs.eofBeforeNBytes(32/8) || bs.peekBytes(32/8) != 0x00000001))
+  {
+    uint8_t trailing_zero_8bits = bs.readByte();
+    assert(trailing_zero_8bits == 0);
+  }
+}
   H265Decoder::H265Decoder()
   {
     this->pDecoder = new TDecTop();
@@ -51,6 +51,7 @@
     stats = AnnexBStats();
     pcListPic = NULL;
     bytestream = new InputByteStreamNoFile();
+    previousStream.resize(0);
   }
 
   H265Decoder::~H265Decoder()
@@ -127,30 +128,39 @@
   int H265Decoder::DecodeBitStreamIntoFrame(unsigned char* kpH265BitStream,igtl_uint8* outputFrame, igtl_uint32 dimensions[2], igtl_uint64& iStreamSize) {
     int m_iSkipFrame = 0;
     int m_iPOCLastDisplay = m_iSkipFrame;
-    bytestream->SetByteStream(kpH265BitStream, iStreamSize);
-    while(bytestream->GetPos()<iStreamSize)
+    if(previousStream.size())
     {
-      //std::vector<uint8_t> buf = nalu.getBitstream().getFifo();
-      nalu = *(new InputNALUnit());
-      //buf.clear();
+      bytestream->PrepareStreamWithProcessedNal(kpH265BitStream, &(previousStream[0]), iStreamSize, previousStream.size());
+    }
+    else
+    {
+      bytestream->PrepareStreamWithProcessedNal(kpH265BitStream, NULL, iStreamSize, 0);
+    }
+    Bool iRet = false;
+    while(bytestream->GetPos()<(iStreamSize+previousStream.size()))
+    {
+      InputNALUnit nalu;
+      int previousPos = bytestream->GetPos();
       GetNALUnitFromByteStream(*bytestream, nalu.getBitstream().getFifo());
-      //nalu.getBitstream().getFifo().resize(iStreamSize);
-      //memcpy(&(nalu.getBitstream().getFifo().front()), kpH265BitStream, iStreamSize);
       read(nalu);
-      
+      std::cerr<<bytestream->GetPos()-previousPos<<" "<<nalu.getBitstream().getFifo().size()<<std::endl;
       Bool iRet = pDecoder->decode(nalu, m_iSkipFrame, m_iPOCLastDisplay);
       if (iRet)
       {
         int poc;
         pDecoder->executeLoopFilters(poc, pcListPic);
         TComPic* pcPicTop = *pcListPic->begin();
-        int iRet = ReconstructDecodedPic(pcPicTop, outputFrame);
+        iRet = ReconstructDecodedPic(pcPicTop, outputFrame);
+        previousStream.resize(nalu.getBitstream().getFifo().size());
+        bytestream->resetFutureBytes();
+        memcpy(&previousStream[0], &nalu.getBitstream().getFifo()[0],  nalu.getBitstream().getFifo().size());
         return iRet;
       }
-      if(bytestream->GetPos()>=iStreamSize)
-      {
-        return -1;
-      }
+    }
+    if(bytestream->GetPos()>=iStreamSize && !iRet)
+    {
+      previousStream.resize(0);
+      return -1;
     }
     return -1;
   }

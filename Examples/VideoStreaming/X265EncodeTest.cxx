@@ -76,9 +76,9 @@ int totalDecodeTime =0;
 double ssim = 0.0;
 float compressionRate = 0.0;
 
-int Width = 1280;
-int Height = 720;
-std::string testFileName("/Users/longquanchen/Desktop/Slicer/Slicer-Build/OpenIGTLink-xcodebuild/OpenH264/res/Cisco_Absolute_Power_1280x720_30fps.yuv");
+int Width = 1920;
+int Height = 1080;
+std::string testFileName("/Users/longquanchen/Documents/VideoStreaming/RoboticHysterectomy.yuv");
 std::string evalFileName("EvalFile.txt");
 FILE* pEval = NULL;
 int startIndex = 0;
@@ -278,7 +278,7 @@ void TestWithVersion(int version, GenericEncoder* videoStreamEncoder, GenericDec
           bitstreamTotalLength += videoMessageReceived->GetBitStreamSize();
           startDecodeTime = videoStreamDecoder->getCurrentTime();
           int iRet= videoStreamDecoder->DecodeVideoMSGIntoSingleFrame(videoMessageReceived.GetPointer(), pDecodedPic);
-          if(iRet)
+          if(iRet>=0)
           {
             totalFrame ++;
             //igtl_uint32 dimension[2] = {Width, Height};
@@ -354,7 +354,7 @@ void X265SpeedEvaluation()
       videoStreamEncoder->SetRCMode(1); // 1 is VPX_CBR
       for (int j = 1; j<=20; j=j+4) // The original frame bits per second is 256*256*20*8, the compression ratio is set from 0.5% to 8%
       {
-        videoStreamEncoder->SetRCTaregetBitRate((int)(256*256/100*8*20*j));
+        videoStreamEncoder->SetRCTaregetBitRate((int)(1920*1080/100*8*20*j));
         videoStreamEncoder->InitializeEncoder();
         videoStreamEncoder->SetSpeed(speed);
         TestWithVersion(IGTL_HEADER_VERSION_1, videoStreamEncoder, videoStreamDecoder, false);

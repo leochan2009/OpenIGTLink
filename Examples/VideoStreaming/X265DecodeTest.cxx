@@ -142,15 +142,17 @@ void video_decode_example(const char* fileName)
     {
       read(nalu);
       read(nalu2);
+      std::cerr<<(int)bitstreamFile.tellg()-location<<" "<<nalu.getBitstream().getFifo().size()<<" "<<bytestreamLocal.GetPos()<<std::endl;
       if( (m_iMaxTemporalLayer >= 0 && nalu.m_temporalId > m_iMaxTemporalLayer) /*|| !isNaluWithinTargetDecLayerIdSet(&nalu)  */)
       {
         bNewPicture = false;
       }
       else
       {
-        bNewPicture = m_cTDecTop.decode(nalu, m_iSkipFrame, m_iPOCLastDisplay);
+        bNewPicture = m_cTDecTop.decode(nalu2, m_iSkipFrame, m_iPOCLastDisplay);
         if (bNewPicture)
         {
+          streampos locationtest = bitstreamFile.tellg();
           bitstreamFile.clear();
           /* location points to the current nalunit payload[1] due to the
            * need for the annexB parser to read three extra bytes.
@@ -233,7 +235,7 @@ void video_decode_example(const char* fileName)
 
 int main(int argc, char *argv[]) {
   //init_main(argc, argv);
-  std::string input_file = "/Users/longquanchen/Desktop/Slicer/Slicer-Build/OpenIGTLink-xcodebuild/bin/Debug/Test.265";
+  std::string input_file = "/Users/longquanchen/Desktop/Github/Slicer-build/OpenIGTLink-XcodeBuild/bin/Debug/Test.265";
   video_decode_example(input_file.c_str());
   return 0;
 }
