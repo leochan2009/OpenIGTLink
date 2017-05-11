@@ -34,12 +34,12 @@
     {
       nalUnit.push_back(bs.readByte());
     }
-    /*while ((bs.eofBeforeNBytes(24/8) || bs.peekBytes(24/8) != 0x000001)
+    while ((bs.eofBeforeNBytes(24/8) || bs.peekBytes(24/8) != 0x000001)
            &&     (bs.eofBeforeNBytes(32/8) || bs.peekBytes(32/8) != 0x00000001))
     {
       uint8_t trailing_zero_8bits = bs.readByte();
       assert(trailing_zero_8bits == 0);
-    }*/
+    }
   }
   H265Decoder::H265Decoder()
   {
@@ -130,7 +130,9 @@
     bytestream->SetByteStream(kpH265BitStream, iStreamSize);
     while(bytestream->GetPos()<iStreamSize)
     {
-      nalu.getBitstream().getFifo().clear();
+      //std::vector<uint8_t> buf = nalu.getBitstream().getFifo();
+      nalu = *(new InputNALUnit());
+      //buf.clear();
       GetNALUnitFromByteStream(*bytestream, nalu.getBitstream().getFifo());
       //nalu.getBitstream().getFifo().resize(iStreamSize);
       //memcpy(&(nalu.getBitstream().getFifo().front()), kpH265BitStream, iStreamSize);

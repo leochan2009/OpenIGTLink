@@ -77,7 +77,7 @@ int  inputFrameNum = 100;
 template <typename T>
 std::string ToString(T variable)
 {
-  stringstream stream;
+  std::stringstream stream;
   stream << variable;
   return stream.str();
 }

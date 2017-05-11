@@ -65,6 +65,8 @@ namespace H265DecoderNameSpace
     
     int GetPos(){return pos;};
     
+    void SetPos(int value){pos = value>=0?value:0;};
+    
     void SetByteStream(igtl_uint8* bitStream, int size)
     {
       this->reset();
@@ -72,6 +74,12 @@ namespace H265DecoderNameSpace
       memcpy(inputStream, bitStream, size);
       streamSize = size;
     }
+    
+    void resetFutureBytes()
+    {
+      m_NumFutureBytes = 0;
+      m_FutureBytes = 0;
+    };
     
     void reset()
     {
@@ -154,11 +162,11 @@ namespace H265DecoderNameSpace
     
     virtual int DecodeVideoMSGIntoSingleFrame(igtl::VideoMessage* videoMessage, SourcePicture* pDecodedPic);
     
+    int ReconstructDecodedPic(TComPic* picTop, igtl_uint8* outputFrame);
+    
   private:
     
     virtual void ComposeByteSteam(igtl_uint8** inputData, int dimension[2], int iStride[2], igtl_uint8 *outputFrame);
-    
-    int ReconstructDecodedPic(TComPic* picTop, igtl_uint8* outputFrame);
     
     TDecTop* pDecoder;
     

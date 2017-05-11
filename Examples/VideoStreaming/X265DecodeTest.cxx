@@ -19,6 +19,37 @@
 #include "TLibCommon/TComList.h"
 #include "TLibCommon/TComPicYuv.h"
 #include "TLibDecoder/TDecTop.h"
+#include "H265Decoder.h"
+
+static void GetNALUnitFromByteStream(
+                                     InputByteStreamNoFile& bs,
+                                     vector<uint8_t>& nalUnit)
+{
+  while ((bs.eofBeforeNBytes(24/8) || bs.peekBytes(24/8) != 0x000001)
+         &&     (bs.eofBeforeNBytes(32/8) || bs.peekBytes(32/8) != 0x00000001))
+  {
+    uint8_t leading_zero_8bits = bs.readByte();
+    assert(leading_zero_8bits == 0);
+  }
+  if (bs.peekBytes(24/8) != 0x000001)
+  {
+    uint8_t zero_byte = bs.readByte();
+    assert(zero_byte == 0);
+  }
+  uint32_t start_code_prefix_one_3bytes = bs.readBytes(24/8);
+  assert(start_code_prefix_one_3bytes == 0x000001);
+  while (bs.eofBeforeNBytes(24/8) || bs.peekBytes(24/8) > 2)
+  {
+    nalUnit.push_back(bs.readByte());
+  }
+  while ((bs.eofBeforeNBytes(24/8) || bs.peekBytes(24/8) != 0x000001)
+         &&     (bs.eofBeforeNBytes(32/8) || bs.peekBytes(32/8) != 0x00000001))
+  {
+    uint8_t trailing_zero_8bits = bs.readByte();
+    assert(trailing_zero_8bits == 0);
+  }
+}
+
 
 /*bool isNaluWithinTargetDecLayerIdSet( InputNALUnit* nalu )
 {
@@ -41,7 +72,6 @@ void video_decode_example(const char* fileName)
 {
   Int                 poc;
   TComList<TComPic*>* pcListPic = NULL;
-  ifstream bitstreamFile2("", ifstream::in | ifstream::binary);
   ifstream bitstreamFile(fileName, ifstream::in | ifstream::binary);
   if (!bitstreamFile)
   {
@@ -50,6 +80,11 @@ void video_decode_example(const char* fileName)
   }
   
   InputByteStream bytestream(bitstreamFile);
+  InputByteStreamNoFile bytestreamLocal = *(new InputByteStreamNoFile());
+  FILE* inputFile = fopen(fileName,"rb");
+  igtl_uint8 *bitStream = new igtl_uint8[300000];
+  fread(bitStream,1,300000,inputFile);
+  bytestreamLocal.SetByteStream(bitStream, 300000);
   std::string   m_outputDecodedSEIMessagesFilename;
   std::ofstream                   m_seiMessageFileStream;
   if (!m_outputDecodedSEIMessagesFilename.empty() && m_outputDecodedSEIMessagesFilename!="-")
@@ -88,7 +123,9 @@ void video_decode_example(const char* fileName)
     AnnexBStats stats = AnnexBStats();
     
     InputNALUnit nalu;
+    InputNALUnit nalu2;
     byteStreamNALUnit(bytestream, nalu.getBitstream().getFifo(), stats);
+    GetNALUnitFromByteStream(bytestreamLocal, nalu2.getBitstream().getFifo());
     
     // call actual decoding function
     Bool bNewPicture = false;
@@ -104,6 +141,7 @@ void video_decode_example(const char* fileName)
     else
     {
       read(nalu);
+      read(nalu2);
       if( (m_iMaxTemporalLayer >= 0 && nalu.m_temporalId > m_iMaxTemporalLayer) /*|| !isNaluWithinTargetDecLayerIdSet(&nalu)  */)
       {
         bNewPicture = false;
@@ -124,6 +162,8 @@ void video_decode_example(const char* fileName)
           TComCodingStatistics::SetStatistics(backupStats);
 #else
           bitstreamFile.seekg(location-streamoff(3));
+          bytestreamLocal.SetPos((int)location-3);
+          bytestreamLocal.resetFutureBytes();
           bytestream.reset();
 #endif
         }
@@ -193,7 +233,7 @@ void video_decode_example(const char* fileName)
 
 int main(int argc, char *argv[]) {
   //init_main(argc, argv);
-  std::string input_file = "/Users/longquanchen/Desktop/Github/Slicer-build/OpenIGTLink-XcodeBuild/bin/Debug/Test.265";
+  std::string input_file = "/Users/longquanchen/Desktop/Slicer/Slicer-Build/OpenIGTLink-xcodebuild/bin/Debug/Test.265";
   video_decode_example(input_file.c_str());
   return 0;
 }
