@@ -198,13 +198,19 @@ namespace H265DecoderNameSpace
     
     TDecTop* pDecoder;
     
-    AnnexBStats stats;
-    
     TComList<TComPic*>* pcListPic;
     
     InputByteStreamNoFile* bytestream;
     
-    std::vector<igtl_uint8> previousStream;
+    igtl_uint8* previousStream;
+    
+    long previousStreamSize;
+    
+    bool VPSReceived;
+    
+    bool SPSReceived;
+    
+    bool PPSReceived;
     
   };
 

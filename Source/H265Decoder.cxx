@@ -48,15 +48,27 @@ static void GetNALUnitFromByteStream(
     this->pDecoder->init();
     pDecoder->setDecodedPictureHashSEIEnabled(0);
     this->deviceName = "";
-    stats = AnnexBStats();
     pcListPic = NULL;
     bytestream = new InputByteStreamNoFile();
-    previousStream.resize(0);
+    previousStream = new igtl_uint8[0];
+    previousStreamSize = 0;
+    VPSReceived = false;
+    SPSReceived = false;
+    PPSReceived = false;
   }
 
   H265Decoder::~H265Decoder()
   {
+    pDecoder->deletePicBuffer();
     pDecoder->destroy();
+    if (pcListPic)
+    {
+      pcListPic->clear();
+      pcListPic = NULL;
+    }
+    delete bytestream;
+    delete previousStream;
+    previousStream = NULL;
     pDecoder = NULL;
   }
 
@@ -128,38 +140,65 @@ static void GetNALUnitFromByteStream(
   int H265Decoder::DecodeBitStreamIntoFrame(unsigned char* kpH265BitStream,igtl_uint8* outputFrame, igtl_uint32 dimensions[2], igtl_uint64& iStreamSize) {
     int m_iSkipFrame = 0;
     int m_iPOCLastDisplay = m_iSkipFrame;
-    if(previousStream.size())
+    if(previousStreamSize)
     {
-      bytestream->PrepareStreamWithProcessedNal(kpH265BitStream, &(previousStream[0]), iStreamSize, previousStream.size());
+      bytestream->PrepareStreamWithProcessedNal(kpH265BitStream, &(previousStream[0]), iStreamSize, previousStreamSize);
     }
     else
     {
       bytestream->PrepareStreamWithProcessedNal(kpH265BitStream, NULL, iStreamSize, 0);
     }
     Bool iRet = false;
-    while(bytestream->GetPos()<(iStreamSize+previousStream.size()))
+    while(bytestream->GetPos()<(iStreamSize+previousStreamSize))
     {
       InputNALUnit nalu;
-      int previousPos = bytestream->GetPos();
       GetNALUnitFromByteStream(*bytestream, nalu.getBitstream().getFifo());
-      read(nalu);
-      std::cerr<<bytestream->GetPos()-previousPos<<" "<<nalu.getBitstream().getFifo().size()<<std::endl;
-      Bool iRet = pDecoder->decode(nalu, m_iSkipFrame, m_iPOCLastDisplay);
+      read(nalu);   
+      if(nalu.m_nalUnitType == NAL_UNIT_VPS)
+      {
+        this->VPSReceived = true;
+      }
+      if(nalu.m_nalUnitType == NAL_UNIT_SPS)
+      {
+        this->SPSReceived = true;
+      }
+      if(nalu.m_nalUnitType == NAL_UNIT_PPS)
+      {
+        this->PPSReceived = true;
+      }
+      Bool iRet = false;
+      if (nalu.m_nalUnitType == NAL_UNIT_VPS || nalu.m_nalUnitType == NAL_UNIT_SPS || nalu.m_nalUnitType == NAL_UNIT_PPS)
+      {
+        iRet = pDecoder->decode(nalu, m_iSkipFrame, m_iPOCLastDisplay);
+      }
+      else
+      {
+        if(this->VPSReceived && this->SPSReceived  && this->PPSReceived)
+        {
+          iRet = pDecoder->decode(nalu, m_iSkipFrame, m_iPOCLastDisplay);
+        }
+      }
       if (iRet)
       {
         int poc;
         pDecoder->executeLoopFilters(poc, pcListPic);
-        TComPic* pcPicTop = *pcListPic->begin();
-        iRet = ReconstructDecodedPic(pcPicTop, outputFrame);
-        previousStream.resize(nalu.getBitstream().getFifo().size());
+        iRet = ReconstructDecodedPic(*pcListPic->begin(), outputFrame);
+        previousStreamSize = nalu.getBitstream().getFifo().size();
+        previousStream = new igtl_uint8[previousStreamSize];
         bytestream->resetFutureBytes();
-        memcpy(&previousStream[0], &nalu.getBitstream().getFifo()[0],  nalu.getBitstream().getFifo().size());
+        memcpy(&previousStream[0], &nalu.getBitstream().getFifo()[0],  previousStreamSize);
+        if(pcListPic->size()>=5)
+        {
+          pcListPic->popFront();
+        }
         return iRet;
       }
     }
     if(bytestream->GetPos()>=iStreamSize && !iRet)
     {
-      previousStream.resize(0);
+      delete previousStream;
+      previousStream = NULL;
+      previousStreamSize = 0;
       return -1;
     }
     return -1;

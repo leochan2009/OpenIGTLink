@@ -82,7 +82,7 @@ std::string testFileName("/Users/longquanchen/Documents/VideoStreaming/RoboticHy
 std::string evalFileName("EvalFile.txt");
 FILE* pEval = NULL;
 int startIndex = 0;
-int  inputFrameNum = 100;
+int  inputFrameNum = 15;
 
 template <typename T>
 std::string ToString(T variable)
@@ -354,10 +354,14 @@ void X265SpeedEvaluation()
       videoStreamEncoder->SetRCMode(1); // 1 is VPX_CBR
       for (int j = 1; j<=20; j=j+4) // The original frame bits per second is 256*256*20*8, the compression ratio is set from 0.5% to 8%
       {
+        videoStreamDecoder = new H265Decoder();
+        videoStreamEncoder = new H265Encoder();
         videoStreamEncoder->SetRCTaregetBitRate((int)(1920*1080/100*8*20*j));
         videoStreamEncoder->InitializeEncoder();
         videoStreamEncoder->SetSpeed(speed);
         TestWithVersion(IGTL_HEADER_VERSION_1, videoStreamEncoder, videoStreamDecoder, false);
+        videoStreamDecoder->~H265Decoder();
+        videoStreamEncoder->~H265Encoder();
         float framePerSecondEncode = 1e6/((float)totalEncodeTime)*inputFrameNum;
         float framePerSecondDecode = 1e6/((float)totalDecodeTime)*inputFrameNum;
         std::cerr<<"Total encode and decode frequency for target bitrate="<<j<<": "<<framePerSecondEncode<<",  "<<framePerSecondDecode<<std::endl;
@@ -369,8 +373,6 @@ void X265SpeedEvaluation()
       {
         std::cerr<<it->first<<" "<<it->second<<" "<<it2->first<<" "<<it2->second<<std::endl;
       }
-      videoStreamDecoder->~H265Decoder();
-      videoStreamEncoder->~H265Encoder();
 #endif
     }
   }

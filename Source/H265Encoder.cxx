@@ -45,7 +45,10 @@
     x265_encoder_close(this->pSVCEncoder);
     x265_picture_free(this->H265SrcPicture);
     x265_param_free(this->sSvcParam);
+    this->pNals = NULL;
     this->pSVCEncoder = NULL;
+    this->H265SrcPicture = NULL;
+    this->sSvcParam = NULL;
   }
 
   int H265Encoder::FillSpecificParameters() {
@@ -56,10 +59,11 @@
     this->sSvcParam->bRepeatHeaders=1;//write sps,pps before keyframe
     this->sSvcParam->fpsNum=200;
     this->sSvcParam->fpsDenom=1;
-    this->sSvcParam->internalCsp=X265_CSP_I420;
-    this->sSvcParam->sourceWidth=1280;
-    this->sSvcParam->sourceHeight=720;
+    this->sSvcParam->sourceWidth=1920;
+    this->sSvcParam->sourceHeight=1080;
     this->sSvcParam->bEnableTemporalSubLayers = false;
+    this->sSvcParam->maxNumReferences = 1;
+    this->sSvcParam->maxNumMergeCand = 1;
     return 0;
   }
 
@@ -102,14 +106,35 @@
     return 0;
   }
 
+  void H265Encoder::CopySettingToAnother(H265EncoderNameSpace::x265_param* srcSetting,H265EncoderNameSpace::x265_param* dstSetting)
+  {
+    dstSetting->rc.qpMax = srcSetting->rc.qpMax;
+    dstSetting->rc.qpMin = srcSetting->rc.qpMin;
+    dstSetting->rc.aqMode = srcSetting->rc.aqMode;
+    dstSetting->rc.rateControlMode = srcSetting->rc.rateControlMode;
+    dstSetting->rc.bitrate = srcSetting->rc.bitrate;
+    dstSetting->sourceWidth = srcSetting->sourceWidth;
+    dstSetting->sourceHeight = srcSetting->sourceHeight;
+    dstSetting->internalCsp = srcSetting->internalCsp;
+    dstSetting->bRepeatHeaders = srcSetting->bRepeatHeaders;//write sps,pps before keyframe
+    dstSetting->fpsNum = srcSetting->fpsNum;
+    dstSetting->fpsDenom = srcSetting->fpsDenom;
+    dstSetting->bEnableTemporalSubLayers = srcSetting->bEnableTemporalSubLayers;
+    dstSetting->maxNumReferences = srcSetting->maxNumReferences;
+    dstSetting->maxNumMergeCand = srcSetting->maxNumMergeCand;
+  }
 
   int H265Encoder::SetSpeed(int speed)
   {
     speed = speed>=0?speed:0;
     speed = speed<=9?speed:9;
     this->codecSpeed = speed;
+    H265EncoderNameSpace::x265_param* previousSetting = H265EncoderNameSpace::x265_param_alloc();
     
+    this->CopySettingToAnother(this->sSvcParam, previousSetting);
     x265_param_default_preset(this->sSvcParam,ToString(speed).c_str(),"zerolatency");
+    this->CopySettingToAnother(previousSetting, this->sSvcParam);
+    x265_param_free(previousSetting);
     if (x265_encoder_reconfig(this->pSVCEncoder, sSvcParam)<0) {
       fprintf (stderr, "Set speed mode failed.\n");
       return -1;

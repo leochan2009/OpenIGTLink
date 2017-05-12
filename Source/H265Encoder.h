@@ -118,6 +118,10 @@ namespace H265EncoderNameSpace
     virtual int SetRCTaregetBitRate(unsigned int bitRate);
     
     virtual bool GetLosslessLink(){return this->sSvcParam->bLossless;};
+
+  protected:
+    
+    void CopySettingToAnother(H265EncoderNameSpace::x265_param* srcSetting,H265EncoderNameSpace::x265_param* dstSetting);
     
   private:
     
