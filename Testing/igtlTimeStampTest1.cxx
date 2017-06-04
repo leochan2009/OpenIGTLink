@@ -12,14 +12,12 @@
 =========================================================================*/
 
 #include <igtlTimeStamp.h>
-
-#define EXIT_SUCCESS 0
-#define EXIT_FAILURE 1
+#include "igtlOSUtil.h"
+#include "igtlTestConfig.h"
 
 #include <iostream>
 
-int main(int, char * [] )
-{
+TEST(TimeStampTest, SetTime){
   // Simply testing Setter/Getter
   igtl::TimeStamp::Pointer ts = igtl::TimeStamp::New();
   ts->GetTime();
@@ -29,15 +27,34 @@ int main(int, char * [] )
   ts->SetTimeInNanoseconds(totalNanosSinceEpochBefore);
 
   igtlUint64 totalNanosSinceEpochAfter = ts->GetTimeStampInNanoseconds();
+  EXPECT_EQ(totalNanosSinceEpochAfter, totalNanosSinceEpochBefore);
   if (totalNanosSinceEpochAfter != totalNanosSinceEpochBefore)
   {
     std::cerr << "Expected totalNanosSinceEpochBefore=" << totalNanosSinceEpochBefore << " to equal totalNanosSinceEpochAfter=" << totalNanosSinceEpochAfter << std::endl;
-    return EXIT_FAILURE;
   }
-
-  return EXIT_SUCCESS;
+}
+TEST(TimeStampTest, GetTimeInterval)
+{
+  for (int i = 0; i < 10; i++)
+  {
+    igtl::TimeStamp::Pointer ts_pre = igtl::TimeStamp::New();
+    ts_pre->GetTime();
+    igtlUint64 nanoTimePre = ts_pre->GetTimeStampInNanoseconds();
+    igtl::Sleep(20);
+    igtl::TimeStamp::Pointer ts_post = igtl::TimeStamp::New();
+    ts_post->GetTime();
+    igtlUint64 nanoTimePost = ts_post->GetTimeStampInNanoseconds();
+    std::cerr << "Time Pre: " << nanoTimePre << "Time Post: " << nanoTimePost << std::endl;
+    EXPECT_NE(nanoTimePost, nanoTimePre);
+  }
 }
 
+
+int main(int argc, char **argv)
+{
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
 
 
 
