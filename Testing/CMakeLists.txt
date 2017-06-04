@@ -107,7 +107,7 @@ TARGET_LINK_LIBRARIES(igtlMultiThreaderTest1 OpenIGTLink)
 TARGET_LINK_LIBRARIES(igtlMultiThreaderTest2 OpenIGTLink)
 TARGET_LINK_LIBRARIES(igtlMultiThreaderTest3 OpenIGTLink)
 TARGET_LINK_LIBRARIES(igtlMessageFactoryTest OpenIGTLink)
-TARGET_LINK_LIBRARIES(igtlTimeStampTest1 OpenIGTLink)
+TARGET_LINK_LIBRARIES(igtlTimeStampTest1 ${GTEST_LINK})
 TARGET_LINK_LIBRARIES(igtlMessageBaseTest ${GTEST_LINK})
 TARGET_LINK_LIBRARIES(igtlConditionVariableTest ${GTEST_LINK})
 
