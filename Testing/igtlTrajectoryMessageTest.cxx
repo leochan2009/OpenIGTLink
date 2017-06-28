@@ -1,16 +1,17 @@
 /*=========================================================================
  
- Program:   OpenIGTLink Library
- Language:  C++
+  Program:   OpenIGTLink Library
+  Language:  C++
  
- Copyright (c) Insight Software Consortium. All rights reserved.
+  Copyright (c) Insight Software Consortium. All rights reserved.
  
- This software is distributed WITHOUT ANY WARRANTY; without even
- the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- PURPOSE.  See the above copyright notices for more information.
+  This software is distributed WITHOUT ANY WARRANTY; without even
+  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+  PURPOSE.  See the above copyright notices for more information.
  
- =========================================================================*/
+  =========================================================================*/
 
+//#define IGTL_LEGACY_TEST
 #include "igtlTrajectoryMessage.h"
 #include "igtlutil/igtl_test_data_trajectory.h"
 #include "igtlMessageDebugFunction.h"
@@ -60,7 +61,23 @@ void BuildUpElements()
   trajectorySendMsg->AddTrajectoryElement(trajectoryElement0);
   trajectorySendMsg->AddTrajectoryElement(trajectoryElement1);
   trajectorySendMsg->AddTrajectoryElement(trajectoryElement2);
-  
+}
+
+TEST(TrajectoryMessageTest, DeprecatedMethodTest)
+{
+  BuildUpElements();
+  int size = trajectorySendMsg->GetNumberOfTrajectoryElement();
+  EXPECT_EQ(size, 3);
+  igtl::TrajectoryElement::Pointer trajectoryElementNotUsed = igtl::TrajectoryElement::New();
+  trajectorySendMsg->ClearTrajectoryElement(trajectoryElementNotUsed);
+  size = trajectorySendMsg->GetNumberOfTrajectoryElement();
+  EXPECT_EQ(size, 0);
+  BuildUpElements();
+  size = trajectorySendMsg->GetNumberOfTrajectoryElement();
+  EXPECT_EQ(size, 3);
+  trajectorySendMsg->ClearTrajectoryElement(trajectoryElementNotUsed);
+  size = trajectorySendMsg->GetNumberOfTrajectoryElement();
+  EXPECT_EQ(size, 0);
 }
 
 TEST(TrajectoryMessageTest, PackFormatVersion1)
@@ -117,7 +134,7 @@ TEST(TrajectoryMessageTest, UnpackFormatVersion1)
   trajectoryDescription.push_back((char*)"TRAJECTORY_DESCRIPTION_2");
   
   for (int i = 0; i<3;++i)
-  {
+    {
     igtl::TrajectoryElement::Pointer elem = igtl::TrajectoryElement::New();
     trajectoryReceiveMsg->GetTrajectoryElement(i, elem);
     EXPECT_EQ(strncmp((char*)(elem->GetName()), trajectoryDescription[i], 24),0);
@@ -132,7 +149,7 @@ TEST(TrajectoryMessageTest, UnpackFormatVersion1)
     EXPECT_TRUE(ArrayFloatComparison(returnedTargetPoint, groundTruthTargetPoints[i], 3, ABS_ERROR));
     EXPECT_EQ(elem->GetRadius(), groundTruthRadius[i]);
     EXPECT_EQ(strncmp((char*)elem->GetOwner(), "IMAGE_0", 7),0);
-  }
+    }
 }
 
 
@@ -180,12 +197,12 @@ TEST(TrajectoryMessageTest, UnpackFormatVersion2)
   groundTruthRGBA[2].assign(tempIni3,tempIni3+4);
   
   igtlFloat32 groundTruthEntryPoints[3][3] ={{10.0,15.0,20.0},
-    {40.0,45.0,50.0},
-    {70.0,75.0,80.0}};
+                                             {40.0,45.0,50.0},
+                                             {70.0,75.0,80.0}};
   
   igtlFloat32 groundTruthTargetPoints[3][3] = {{25.0,30.0,35.0},
-    {55.0,60.0,65.0},
-    {85.0,90.0,95.0}};
+                                               {55.0,60.0,65.0},
+                                               {85.0,90.0,95.0}};
   
   igtlFloat32 groundTruthRadius[3] = {5.0,2.5,0.0};
   
@@ -195,7 +212,7 @@ TEST(TrajectoryMessageTest, UnpackFormatVersion2)
   trajectoryDescription.push_back((char*)"TRAJECTORY_DESCRIPTION_2");
   
   for (int i = 0; i<3;++i)
-  {
+    {
     igtl::TrajectoryElement::Pointer elem = igtl::TrajectoryElement::New();
     trajectoryReceiveMsg->GetTrajectoryElement(i, elem);
     EXPECT_EQ(strncmp((char*)(elem->GetName()), trajectoryDescription[i], 24),0);
@@ -210,7 +227,7 @@ TEST(TrajectoryMessageTest, UnpackFormatVersion2)
     EXPECT_TRUE(ArrayFloatComparison(returnedTargetPoint, groundTruthTargetPoints[i], 3, ABS_ERROR));
     EXPECT_EQ(elem->GetRadius(), groundTruthRadius[i]);
     EXPECT_EQ(strncmp((char*)elem->GetOwner(), "IMAGE_0", 7),0);
-  }
+    }
   igtlMetaDataComparisonMacro(trajectoryReceiveMsg);
 }
 
