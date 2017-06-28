@@ -162,6 +162,11 @@ int ReceiveImage(igtl::Socket * socket, igtl::MessageHeader::Pointer& header, ch
     std::cerr << "Spacing               : ("
     << spacing[0] << ", " << spacing[1] << ", " << spacing[2] << ")" << std::endl;
     FILE *fp = fopen(file, "wb");
+    if(!fp)
+    {
+      std::cerr << "File specified doesn't exist." << std::endl;
+      exit(0);
+    }
     std::string lineBreak;
     lineBreak = std::string("\n");
     

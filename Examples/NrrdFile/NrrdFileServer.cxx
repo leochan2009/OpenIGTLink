@@ -36,10 +36,10 @@ int main(int argc, char* argv[])
   if (argc != 4) // check number of arguments
     {
     // If not correct, print usage
-    std::cerr << "Usage: " << argv[0] << " <port> <fps> <imgdir>"    << std::endl;
+    std::cerr << "Usage: " << argv[0] << " <port> <fps> <imgfile>"    << std::endl;
     std::cerr << "    <port>     : Port # (18944 in Slicer default)"   << std::endl;
     std::cerr << "    <fps>      : Frequency (fps) to send coordinate" << std::endl;
-    std::cerr << "    <img>   : file, where \"MRHead-subvolume.nrrd\" are placed." << std::endl;
+    std::cerr << "    <imgfile>   : file, where \"MRHead-subvolume.nrrd\" are placed." << std::endl;
     std::cerr << "                 (usually, in the Examples/Imager/img directory.)" << std::endl;
     exit(0);
     }
