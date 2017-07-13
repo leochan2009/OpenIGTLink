@@ -28,29 +28,36 @@ ENDIF()
 
 #-----------------------------------------------------------------------------
 # Configure VideoStreaming
-OPTION(LINK_H264 "Link the OpenH264 tree." OFF)
-SET(OpenIGTLink_LINK_H264 "0")
-IF(LINK_H264)
+#Configure VideoStream
+OPTION(BUILD_VIDEOSTREAM "Build the Video Stream." OFF)
+SET(OpenIGTLink_BUILD_VIDEOSTREAM "0")
+IF(BUILD_VIDEOSTREAM)
+  SET(OpenIGTLink_BUILD_VIDEOSTREAM "1")
+  OPTION(LINK_H264 "Link the OpenH264 tree." OFF)
+  SET(OpenIGTLink_LINK_H264 "0")
+  IF(LINK_H264)
   SET(OpenIGTLink_LINK_H264 "1")
-ENDIF()
+  ENDIF()
 
-OPTION(LINK_VP9 "Link the VP9 tree." OFF)
-SET(OpenIGTLink_LINK_VP9 "0")
-IF(LINK_VP9)
+  OPTION(LINK_VP9 "Link the VP9 tree." OFF)
+  SET(OpenIGTLink_LINK_VP9 "0")
+  IF(LINK_VP9)
   SET(OpenIGTLink_LINK_VP9 "1")
-ENDIF()
+  ENDIF()
 
-OPTION(LINK_X265 "Link the X265 tree." OFF)
-SET(OpenIGTLink_LINK_X265 "0")
-IF(LINK_X265)
+  OPTION(LINK_X265 "Link the X265 tree." OFF)
+  SET(OpenIGTLink_LINK_X265 "0")
+  IF(LINK_X265)
   SET(OpenIGTLink_LINK_X265 "1")
+  ENDIF()
+
+  OPTION(LINK_OPENHEVC "Link the OpenHevc tree." OFF)
+  SET(OpenIGTLink_LINK_OPENHEVC "0")
+  IF(LINK_OPENHEVC)
+  SET(OpenIGTLink_LINK_OPENHEVC "1")
+  ENDIF()
 ENDIF()
 
-OPTION(LINK_OPENHEVC "Link the OpenHevc tree." OFF)
-SET(OpenIGTLink_LINK_OPENHEVC "0")
-IF(LINK_OPENHEVC)
-  SET(OpenIGTLink_LINK_OPENHEVC "1")
-ENDIF()
 #-----------------------------------------------------------------------------
 
 #Configure WebSocket
