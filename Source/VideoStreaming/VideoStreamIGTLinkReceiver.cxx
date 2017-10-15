@@ -73,7 +73,7 @@ void* ThreadFunctionReadSocket(void* ptr)
     WriteTimeInfo(UDPPacket, totMsgLen, parentObj.receiver);
     if (totMsgLen>0)
       {
-      parentObj.wrapper->PushDataIntoPacketBuffer(UDPPacket, totMsgLen);
+      parentObj.wrapper->ReceiveDataIntoPacketBuffer(UDPPacket, totMsgLen);
       }
     }
 }
@@ -221,7 +221,6 @@ void VideoStreamIGTLinkReceiver::SendStopMessage()
 int VideoStreamIGTLinkReceiver::RunOnUDPSocket()
 {
   igtl::ConditionVariable::Pointer conditionVar = igtl::ConditionVariable::New();
-  igtl::SimpleMutexLock* glock = igtl::SimpleMutexLock::New();
   UDPSocket->JoinNetwork("127.0.0.1", UDPClientPort, 0);
   ReadSocketAndPush info;
   info.wrapper = rtpWrapper;
@@ -237,54 +236,30 @@ int VideoStreamIGTLinkReceiver::RunOnUDPSocket()
   threader->SpawnThread((igtl::ThreadFunctionType)&ThreadFunctionUnWrap, &infoWrapper);
   while(1)
     {
-    glock->Lock();
-    unsigned int messageNum = rtpWrapper->unWrappedMessages.size();
-    glock->Unlock();
-    if(messageNum)// to do: glock this session
+    igtl::VideoMessage::Pointer videoMultiPKTMSG = igtl::VideoMessage::New();
+    if (rtpWrapper->PullUnwrappedMessageAtIndex((igtl::MessageBase::Pointer)videoMultiPKTMSG,0))
       {
-      igtl::VideoMessage::Pointer videoMultiPKTMSG = igtl::VideoMessage::New();
-      glock->Lock();
-      std::map<igtl_uint32, igtl::UnWrappedMessage*>::iterator it = rtpWrapper->unWrappedMessages.begin();
-      igtlUint8 * message = new igtlUint8[it->second->messageDataLength];
-      static int frameNum = 0;
-      int MSGLength = it->second->messageDataLength;
-      memcpy(message, it->second->messagePackPointer, it->second->messageDataLength);
-      delete it->second;
-      it->second = NULL;
-      rtpWrapper->unWrappedMessages.erase(it);
-      glock->Unlock();
-      igtl::MessageHeader::Pointer header = igtl::MessageHeader::New();
-      header->InitPack();
-      memcpy(header->GetPackPointer(), message, IGTL_HEADER_SIZE);
-      header->Unpack();
-      videoMultiPKTMSG->SetMessageHeader(header);
-      videoMultiPKTMSG->AllocateBuffer();
-      if (MSGLength == videoMultiPKTMSG->GetPackSize())
+      videoMultiPKTMSG->Unpack(0);
+      int streamLength = videoMultiPKTMSG->GetBitStreamSize();
+      this->SetWidth(videoMultiPKTMSG->GetWidth());
+      this->SetHeight(videoMultiPKTMSG->GetHeight());
+      if (!(this->videoMessageBuffer==NULL))
         {
-        memcpy(videoMultiPKTMSG->GetPackPointer(), message, MSGLength);
-        videoMultiPKTMSG->Unpack(0);
-        int streamLength = videoMultiPKTMSG->GetBitStreamSize();
-        this->SetWidth(videoMultiPKTMSG->GetWidth());
-        this->SetHeight(videoMultiPKTMSG->GetHeight());
-        if (!(this->videoMessageBuffer==NULL))
-          {
-          delete[] this->videoMessageBuffer;
-          }
-        this->videoMessageBuffer = new igtl_uint8[streamLength];
-        memcpy(this->videoMessageBuffer, videoMultiPKTMSG->GetPackFragmentPointer(2), streamLength);
-        
-        int status = this->ProcessVideoStream(this->videoMessageBuffer,streamLength);
-        
-        if (status == 0)
-          {
-          break;
-          }
-        else if(status == 2)
-          {
-          frameNum ++;
-          }
+        delete[] this->videoMessageBuffer;
         }
-      delete [] message;
+      this->videoMessageBuffer = new igtl_uint8[streamLength];
+      memcpy(this->videoMessageBuffer, videoMultiPKTMSG->GetPackFragmentPointer(2), streamLength);
+      static int frameNum = 0;
+      int status = this->ProcessVideoStream(this->videoMessageBuffer,streamLength);
+      
+      if (status == 0)
+        {
+        break;
+        }
+      else if(status == 2)
+        {
+        frameNum ++;
+        }
       }
     }
   return 0;

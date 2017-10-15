@@ -190,7 +190,7 @@ int VideoStreamIGTLinkServer::ParseConfigForServer()
         this->netWorkBandWidth = atoi(strTag[1].c_str());
         int netWorkBandWidthInBPS = netWorkBandWidth * 1000; //networkBandwidth is in kbps
         int time = floor(8*RTP_PAYLOAD_LENGTH*1e9/netWorkBandWidthInBPS+ 1.0); // the needed time in nanosecond to send a RTP payload.
-        this->rtpWrapper->packetIntervalTime = time; // in nanoSecond
+        this->rtpWrapper->SetPacketSendInterval(time); // in nanoSecond
         }
     }
   }
@@ -535,6 +535,7 @@ static void* ThreadFunctionSendPacket(void* ptr)
   igtl::MultiThreader::ThreadInfo* info =
   static_cast<igtl::MultiThreader::ThreadInfo*>(ptr);
   serverPointer parentObj = *(static_cast<serverPointer*>(info->UserData));
+  int packetInterval = 5000000;
   while(1)
     {
     parentObj.server->glock->Lock();
@@ -552,7 +553,7 @@ static void* ThreadFunctionSendPacket(void* ptr)
       parentObj.server->encodedFrames.erase(it);
       if (parentObj.server->transportMethod == VideoStreamIGTLinkServer::UseUDP)
         {
-        parentObj.server->rtpWrapper->WrapMessageAndSend(parentObj.server->serverUDPSocket, frameCopy->messagePackPointer, frameCopy->messageDataLength);
+        parentObj.server->rtpWrapper->WrapMessageAndSend(parentObj.server->serverUDPSocket, frameCopy->messagePackPointer, frameCopy->messageDataLength, packetInterval);
         }
       else if(parentObj.server->transportMethod == VideoStreamIGTLinkServer::UseTCP)
         {

@@ -109,7 +109,7 @@ TEST(MessageRTPWrapperTest, UnwrapMessageFormatVersion2)
   igtlUint8* UDPPacket = bufferedMsg.pBsBuf.data();
   for (int i= 0; i<bufferedMsg.pPacketLengthInByte.size();i++)
   {
-    messageWrapperReceiverSide->PushDataIntoPacketBuffer(UDPPacket, bufferedMsg.pPacketLengthInByte[i]);
+    messageWrapperReceiverSide->ReceiveDataIntoPacketBuffer(UDPPacket, bufferedMsg.pPacketLengthInByte[i]);
     UDPPacket += bufferedMsg.pPacketLengthInByte[i];
   }
   while(1)
@@ -118,16 +118,8 @@ TEST(MessageRTPWrapperTest, UnwrapMessageFormatVersion2)
     if(iRet == 0)
       break;
   }
-  EXPECT_EQ(messageWrapperReceiverSide->unWrappedMessages.size(), 1);
   igtl::ImageMessage::Pointer imageReceiveMsg = igtl::ImageMessage::New();
-  std::map<igtl_uint32, igtl::UnWrappedMessage*>::iterator it = messageWrapperReceiverSide->unWrappedMessages.begin();
-  igtl::MessageHeader::Pointer header = igtl::MessageHeader::New();
-  header->InitPack();
-  memcpy(header->GetPackPointer(), it->second->messagePackPointer, IGTL_HEADER_SIZE);
-  header->Unpack();
-  imageReceiveMsg->SetMessageHeader(header);
-  imageReceiveMsg->AllocateBuffer();
-  memcpy(imageReceiveMsg->GetPackBodyPointer(), it->second->messagePackPointer + IGTL_HEADER_SIZE, it->second->messageDataLength - IGTL_HEADER_SIZE);
+  messageWrapperReceiverSide->PullUnwrappedMessageAtIndex((igtl::MessageBase::Pointer)imageReceiveMsg);
   int c = imageReceiveMsg->Unpack(1);
   EXPECT_EQ(c, 2);
   igtl_header *messageHeader = (igtl_header *)imageReceiveMsg->GetPackPointer();
@@ -169,7 +161,7 @@ TEST(MessageRTPWrapperTest, UnwrapMessageFormatVersion2)
   for (int i = bufferedMsg.pPacketLengthInByte.size()-1; i>=0;i--)
   {
     UDPPacket -= bufferedMsg.pPacketLengthInByte[i];
-    messageWrapperReceiverSide->PushDataIntoPacketBuffer(UDPPacket, bufferedMsg.pPacketLengthInByte[i]);
+    messageWrapperReceiverSide->ReceiveDataIntoPacketBuffer(UDPPacket, bufferedMsg.pPacketLengthInByte[i]);
   }
   while(1)
   {
@@ -177,16 +169,8 @@ TEST(MessageRTPWrapperTest, UnwrapMessageFormatVersion2)
     if(iRet == 0)
       break;
   }
-  EXPECT_EQ(messageWrapperReceiverSide->unWrappedMessages.size(), 1);
   imageReceiveMsg = igtl::ImageMessage::New();
-  it = messageWrapperReceiverSide->unWrappedMessages.begin();
-  header = igtl::MessageHeader::New();
-  header->InitPack();
-  memcpy(header->GetPackPointer(), it->second->messagePackPointer, IGTL_HEADER_SIZE);
-  header->Unpack();
-  imageReceiveMsg->SetMessageHeader(header);
-  imageReceiveMsg->AllocateBuffer();
-  memcpy(imageReceiveMsg->GetPackBodyPointer(), it->second->messagePackPointer + IGTL_HEADER_SIZE, it->second->messageDataLength - IGTL_HEADER_SIZE);
+  messageWrapperReceiverSide->PullUnwrappedMessageAtIndex((igtl::MessageBase::Pointer)imageReceiveMsg);
   c = imageReceiveMsg->Unpack(1);
   EXPECT_EQ(c, 2);
   messageHeader = (igtl_header *)imageReceiveMsg->GetPackPointer();

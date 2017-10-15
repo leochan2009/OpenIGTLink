@@ -117,32 +117,6 @@ namespace igtl {
       }
   }
   
-  int MessageRTPWrapper::PushDataIntoPacketBuffer(igtlUint8* UDPPacket, igtlUint16 PacketLen)
-  {
-    this->glock->Lock();
-    if(this->incommingPackets.pPacketLengthInByte.size()>PacketMaximumBufferNum)
-      {
-      igtlUint16 firstMsgLen = this->incommingPackets.pPacketLengthInByte[0];
-      this->incommingPackets.pPacketLengthInByte.erase(this->incommingPackets.pPacketLengthInByte.begin());
-      this->incommingPackets.pBsBuf.erase(this->incommingPackets.pBsBuf.begin(), this->incommingPackets.pBsBuf.begin()+firstMsgLen);
-      this->incommingPackets.totalLength -= firstMsgLen;
-      }
-    this->incommingPackets.pPacketLengthInByte.push_back(PacketLen);
-    this->incommingPackets.pBsBuf.insert(this->incommingPackets.pBsBuf.end(), UDPPacket, UDPPacket+PacketLen);
-    this->incommingPackets.totalLength += PacketLen;
-    if (this->incommingPackets.totalLength  == this->incommingPackets.pBsBuf.size())
-      {
-      this->glock->Unlock();
-      return 1;
-      
-      }
-    else
-      {
-      this->glock->Unlock();
-      return 0;
-      }
-  }
-  
   int MessageRTPWrapper::SendBufferedDataWithInterval(igtl::UDPServerSocket::Pointer &socket, int interval) //interval is in nanosecond
   {
     int totalMsgLen = this->outgoingPackets.totalLength;
@@ -230,6 +204,31 @@ namespace igtl {
     return 1;
   }
   
+  int MessageRTPWrapper::ReceiveDataIntoPacketBuffer(igtlUint8* UDPPacket, igtlUint16 PacketLen)
+  {
+  this->glock->Lock();
+  if(this->incommingPackets.pPacketLengthInByte.size()>PacketMaximumBufferNum)
+    {
+    igtlUint16 firstMsgLen = this->incommingPackets.pPacketLengthInByte[0];
+    this->incommingPackets.pPacketLengthInByte.erase(this->incommingPackets.pPacketLengthInByte.begin());
+    this->incommingPackets.pBsBuf.erase(this->incommingPackets.pBsBuf.begin(), this->incommingPackets.pBsBuf.begin()+firstMsgLen);
+    this->incommingPackets.totalLength -= firstMsgLen;
+    }
+  this->incommingPackets.pPacketLengthInByte.push_back(PacketLen);
+  this->incommingPackets.pBsBuf.insert(this->incommingPackets.pBsBuf.end(), UDPPacket, UDPPacket+PacketLen);
+  this->incommingPackets.totalLength += PacketLen;
+  if (this->incommingPackets.totalLength  == this->incommingPackets.pBsBuf.size())
+    {
+    this->glock->Unlock();
+    return 1;
+    
+    }
+  else
+    {
+    this->glock->Unlock();
+    return 0;
+    }
+  }
   
   int MessageRTPWrapper::UnWrapPacketWithTypeAndName(const char *deviceType, const char * deviceName)
   {
@@ -311,7 +310,7 @@ namespace igtl {
         header->Unpack();
         if(fragmentField==NoFragmentIndicator) // fragment doesn't exist
           {
-          if (strcmp(header->GetDeviceType(),deviceType)==0 && strcmp(header->GetDeviceName(),deviceName)==0)
+          if ( strcmp(header->GetDeviceName(),deviceName) == 0 && strcmp(header->GetDeviceType(),deviceType) == 0)
             {
             memcpy(this->reorderBuffer->firstFragBuffer, UDPPacket + curPackedMSGLocation, header->GetBodySizeToRead()+IGTL_HEADER_SIZE);
             this->reorderBuffer->filledPacketNum = 1;
@@ -406,7 +405,7 @@ namespace igtl {
     return 0;
   }
   
-  int MessageRTPWrapper::WrapMessageAndSend(igtl::UDPServerSocket::Pointer &socket, igtl_uint8* messagePackPointer, int msgtotalLen)
+  int MessageRTPWrapper::WrapMessageAndSend(igtl::UDPServerSocket::Pointer &socket, igtl_uint8* messagePackPointer, int msgtotalLen, int interval)
   {
     igtl_uint8* messageContentPointer = messagePackPointer+IGTL_HEADER_SIZE+IGTL_EXTENDED_HEADER_SIZE;
     this->SetMSGHeader((igtl_uint8*)messagePackPointer);
@@ -432,11 +431,54 @@ namespace igtl {
         this->PacketSendTimeStampList.push_back(this->wrapperTimer->GetTimeStampInNanoseconds());
         this->PacketTotalLengthList.push_back(numByteSent);
         }
-      this->SleepInNanoSecond(this->packetIntervalTime);
+      this->SleepInNanoSecond(interval);
       leftmessageContent = messageContentPointer + this->GetCurMSGLocation();
       leftMsgLen = MSGContentLength - this->GetCurMSGLocation();
       }while(leftMsgLen>0 && status!=igtl::MessageRTPWrapper::PacketReady); // to do when bodyMsgLen
     return 1;
+  
+  }
+  
+  int MessageRTPWrapper::WrapMessageAndSend(igtl::UDPServerSocket::Pointer &socket, igtl::MessageBase::Pointer msg, int interval)
+  {
+    igtl_uint8* messagePackPointer = (igtl_uint8*)msg->GetPackPointer();
+    return this->WrapMessageAndSend(socket, messagePackPointer, msg->GetPackSize(), interval);
+  }
+  
+  int MessageRTPWrapper::PullUnwrappedMessageAtIndex(igtl::MessageBase::Pointer receivingMSG, unsigned int index)
+  {
+    glock->Lock();
+    unsigned int messageNum = this->unWrappedMessages.size();
+    glock->Unlock();
+    if(messageNum)// to do: glock this session
+      {
+      glock->Lock();
+      std::map<igtl_uint32, igtl::UnWrappedMessage*>::iterator it = this->unWrappedMessages.begin();
+      if (index > 0 && index < this->unWrappedMessages.size())
+      {
+        std::advance(it,index);
+      }
+      igtlUint8 * message = new igtlUint8[it->second->messageDataLength];
+      int MSGLength = it->second->messageDataLength;
+      memcpy(message, it->second->messagePackPointer, it->second->messageDataLength);
+      delete it->second;
+      it->second = NULL;
+      this->unWrappedMessages.erase(it);
+      glock->Unlock();
+      igtl::MessageHeader::Pointer header = igtl::MessageHeader::New();
+      header->InitPack();
+      memcpy(header->GetPackPointer(), message, IGTL_HEADER_SIZE);
+      header->Unpack();
+      receivingMSG->SetMessageHeader(header);
+      receivingMSG->AllocateBuffer();
+      if (MSGLength == receivingMSG->GetPackSize())
+        {
+        memcpy(receivingMSG->GetPackPointer(), message, MSGLength);
+        }
+      delete [] message;
+      return 1;
+      }
+    return 0;
   }
   
   void MessageRTPWrapper::SleepInNanoSecond(int nanoSecond)
@@ -595,12 +637,6 @@ namespace igtl {
       SeqNum++;
       }
     return status;
-  }
-  
-  
-  igtl::MessageBase::Pointer MessageRTPWrapper::UnWrapMessage(igtl_uint8* messageContent, int bodyMsgLen)
-  {
-    return NULL;
   }
   
 } // namespace igtl

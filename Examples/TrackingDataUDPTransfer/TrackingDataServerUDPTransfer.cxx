@@ -94,6 +94,7 @@ void WrapMessage(igtl::UDPServerSocket::Pointer serverSocket, igtl::MessageRTPWr
 
   igtl::TrackingDataMessage::Pointer trackingMsg;
   trackingMsg = igtl::TrackingDataMessage::New();
+  trackingMsg->SetHeaderVersion(IGTL_HEADER_VERSION_2);
   trackingMsg->SetDeviceName("Tracker");
 
   igtl::TrackingDataElement::Pointer trackElement0;
@@ -153,22 +154,9 @@ int SendTrackingData(igtl::UDPServerSocket::Pointer& socket, igtl::TrackingDataM
 
   trackingMsg->Pack();
   rtpWrapper->SetSSRC(1);
-  int status = igtl::MessageRTPWrapper::PaketReady;
-  igtl_uint8* messagePointer = (igtl_uint8*)trackingMsg->GetPackBodyPointer();
-  rtpWrapper->SetMSGHeader((igtl_uint8*)trackingMsg->GetPackPointer());
-  int messageLength = trackingMsg->GetPackBodySize();
-  do
-  {
-    status = rtpWrapper->WrapMessage(messagePointer, messageLength);
-    if (status == igtl::MessageRTPWrapper::WaitingForFragment || status == igtl::MessageRTPWrapper::PaketReady)
-    {
-      socket->WriteSocket(rtpWrapper->GetPackPointer(), rtpWrapper->GetPackedMSGLocation());
-      messagePointer += rtpWrapper->GetCurMSGLocation();
-      messageLength = trackingMsg->GetPackBodySize() - rtpWrapper->GetCurMSGLocation();
-    }
-  }while(status!=igtl::MessageRTPWrapper::PaketReady);
-  socket->WriteSocket(rtpWrapper->GetPackPointer(), RTP_PAYLOAD_LENGTH+RTP_HEADER_LENGTH);
-  
+
+ //igtl_uint8* messagePointer = (igtl_uint8*)trackingMsg->GetPackPointer();
+  rtpWrapper->WrapMessageAndSend(socket, (igtl::MessageBase::Pointer)trackingMsg, 50000000);
   phi0 += 0.1;
   phi1 += 0.2;
   phi2 += 0.3;

@@ -29,6 +29,7 @@
 #include "igtl_util.h"
 #include "igtlTimeStamp.h"
 #include "igtlOSUtil.h"
+#include <iterator>    
 
 #if defined(WIN32) || defined(_WIN32)
 #include <windows.h>
@@ -178,15 +179,55 @@ namespace igtl
       ToUnpackAnotherMSG,
       WaitingForAnotherPacket
     };
+  
+    int WrapMessageAndSend(igtl::UDPServerSocket::Pointer &socket, igtl::MessageBase::Pointer msg, int interval); //interval in nanosecond
+  
+    int WrapMessageAndSend(igtl::UDPServerSocket::Pointer &socket, igtl_uint8* messagePackPointer, int msgtotalLen, int interval); //interval in nanosecond
+  
+    void SetFCFS(bool isFCFS){FCFS = isFCFS;};
     
-    igtl_uint32 messageID;
-    igtl_uint16 fragmentNumber;
+    void SetRTPPayloadType(igtl_uint8 payLoadType){this->RTPPayloadType = payLoadType;};
     
+    igtl_uint8 GetRTPPayLoadType(){return this->RTPPayloadType;};
+  
+    int ReceiveDataIntoPacketBuffer(igtlUint8* UDPPacket, igtlUint16 PacketLen);
     
+    int UnWrapPacketWithTypeAndName(const char *deviceType, const char * deviceName);
+  
+    int PullUnwrappedMessageAtIndex(igtl::MessageBase::Pointer receivingMSG, unsigned int index = 0);
+    
+    ///Set the synchronization source identifier, different session has different SSRC
+    void SetSSRC(igtl_uint32 identifier);
+    
+    ///Set the Contributing source identifier. different device has different CSRC
+    void SetCSRC(igtl_uint32 identifier);
+    
+    ///Set the sequencen number at the rtp header
+    void SetSeqNum(igtl_uint16 num);
+  
+  
+    void SetRTPPayloadLength(unsigned int payloadLength){this->RTPPayloadLength = payloadLength;};
+    
+    unsigned int GetRTPPayloadLength(){return this->RTPPayloadLength;};
+  
+    void SetPacketSendInterval(int timeInNanosec){this->packetIntervalTime = timeInNanosec;};
+  
+    ///Get the wrapped outgoing UDP packet
+    PacketBuffer GetOutGoingPackets(){return outgoingPackets;};
+  
+    int WrapMessageAndPushToBuffer(igtl_uint8* messagePackPointer, int msgtotalLen);
+  
+  protected:
+    MessageRTPWrapper();
+    ~MessageRTPWrapper();
     /// The message get fragmented and sent in different packets. The packets sending should have some interval in the function
     /// WrapMessageAndSend(), otherwize the network demanding would be too high to cause packet loss
     /// This variable need to be set according to the network bandwidth and the RTPPayload size
     int packetIntervalTime;
+    
+    igtl_uint32 messageID;
+    
+    igtl_uint16 fragmentNumber;
     
     std::vector<igtl_uint64> PacketSendTimeStampList;
     
@@ -201,39 +242,11 @@ namespace igtl
     
     /// Gets the number of fragments to be sent for the packed (serialized) data. Returns numberOfDataFragToSent
     int GetNumberODataFragToSent() { return numberOfDataFragToSent;  /* the data for transmission is too big for UDP transmission, so the data will be transmitted by multiple packets*/ };
-    
-    void SetFCFS(bool isFCFS){FCFS = isFCFS;};
-    
-    void SetRTPPayloadType(igtl_uint8 payLoadType){this->RTPPayloadType = payLoadType;};
-    
-    igtl_uint8 GetRTPPayLoadType(){return this->RTPPayloadType;};
-    
-    int WrapMessageAndPushToBuffer(igtl_uint8* messagePackPointer, int msgtotalLen);
-    
+  
     int SendBufferedDataWithInterval(igtl::UDPServerSocket::Pointer &socket, int interval);
-    
-    int WrapMessageAndSend(igtl::UDPServerSocket::Pointer &socket, igtl_uint8* messagePackPointer, int msgtotalLen);
-    
-    int PushDataIntoPacketBuffer(igtlUint8* UDPPacket, igtlUint16 PacketLen);
-    
-    int UnWrapPacketWithTypeAndName(const char *deviceType, const char * deviceName);
-    
-    igtl::MessageBase::Pointer UnWrapMessage(igtl_uint8* messageContent, int totMsgLen);
-    
-    ///Set the synchronization source identifier, different session has different SSRC
-    void SetSSRC(igtl_uint32 identifier);
-    
-    ///Set the Contributing source identifier. different device has different CSRC
-    void SetCSRC(igtl_uint32 identifier);
-    
-    ///Set the sequencen number at the rtp header
-    void SetSeqNum(igtl_uint16 num);
-    
+  
     ///Set the current msg header
     void SetMSGHeader(igtl_uint8* header);
-    
-    ///Get the wrapped outgoing UDP packet
-    PacketBuffer GetOutGoingPackets(){return outgoingPackets;};
     
     ///Get the incomming UDP packet
     PacketBuffer GetInCommingPackets(){return incommingPackets;};
@@ -243,25 +256,15 @@ namespace igtl
     int GetPackedMSGLocation(){return this->curPackedMSGLocation;};
     
     int GetRTPWrapperStatus(){return status;};
-    
-    void SetRTPPayloadLength(unsigned int payloadLength){this->RTPPayloadLength = payloadLength;};
-    
-    unsigned int GetRTPPayloadLength(){return this->RTPPayloadLength;};
-    
-    std::map<igtl_uint32, igtl::UnWrappedMessage*> unWrappedMessages;
-    
-    igtl::SimpleMutexLock* glock;
-    
-    
-  protected:
-    MessageRTPWrapper();
-    ~MessageRTPWrapper();
-    
+
     /// Gets a pointer to the scalar data (for fragmented pack support).
     igtl_uint8* GetPackPointer(){return packedMsg;};
     
     int WrapMessage(igtl_uint8* messageContent, int bodyMsgLen);
-    
+  
+    std::map<igtl_uint32, igtl::UnWrappedMessage*> unWrappedMessages;
+  
+    igtl::SimpleMutexLock* glock;
     
   private:
     unsigned int RTPPayloadLength;
