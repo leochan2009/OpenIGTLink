@@ -60,7 +60,7 @@
 #include "vpx_dsp/ssim.h"
 #endif
 
-#if defined(USE_X265)
+#if defined(OpenIGTLink_USE_X265)
   #include "H265Encoder.h"
   #include "H265Decoder.h"
 #endif
@@ -337,7 +337,7 @@ void X265SpeedEvaluation()
   {
     for (int i = 0; i<22; i=i+2)
     {
-#if defined(USE_X265)
+#if defined(OpenIGTLink_USE_X265)
       startIndex = i*100;
       pEval = fopen (evalFileName.c_str(), "a");
       std::string title = "H265CodecSpeedAndRateEvalWithSpeed-";
