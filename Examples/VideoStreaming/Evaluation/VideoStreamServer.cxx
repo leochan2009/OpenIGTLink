@@ -12,12 +12,12 @@
 =========================================================================*/
 
 #include "VideoStreamIGTLinkServer.h"
-#if OpenIGTLink_BUILD_H264
+#if defined(OpenIGTLink_USE_H264)
   #include "H264Encoder.h"
 #endif
 
-#if OpenIGTLink_BUILD_VPX
-  #include "VPXEncoder.h"
+#if defined(OpenIGTLink_USE_VP9)
+  #include "VP9Encoder.h"
 #endif
 
 
@@ -36,10 +36,10 @@ int main (int argc, char** argv)
   }
   
   VideoStreamIGTLinkServer server(argv[1]);
-#if OpenIGTLink_BUILD_VPX
-  VPXEncoder* encoder = new VPXEncoder();
+#if defined(OpenIGTLink_USE_VP9)
+  VP9Encoder* encoder = new VP9Encoder();
   encoder->SetSpeed(6);
-#elif OpenIGTLink_BUILD_H264
+#elif defined(OpenIGTLink_USE_H264)
   H264Encoder* encoder = new H264Encoder();
 #endif
   server.SetEncoder(encoder);

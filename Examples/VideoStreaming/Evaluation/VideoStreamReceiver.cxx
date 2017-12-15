@@ -12,12 +12,12 @@
  =========================================================================*/
 
 #include "VideoStreamIGTLinkReceiver.h"
-#if OpenIGTLink_BUILD_H264
+#if defined(OpenIGTLink_USE_H264)
 #include "H264Decoder.h"
 #endif
 
-#if OpenIGTLink_BUILD_VPX
-#include "VPXDecoder.h"
+#if defined(OpenIGTLink_USE_VP9)
+#include "VP9Decoder.h"
 #endif
 
 
@@ -36,9 +36,9 @@ int main (int argc, char** argv)
     exit(0);
   }
   VideoStreamIGTLinkReceiver receiver= VideoStreamIGTLinkReceiver(argv[1]);
-#if OpenIGTLink_BUILD_VPX
-  VPXDecoder* decoder = new VPXDecoder();
-#elif OpenIGTLink_BUILD_H264
+#if defined(OpenIGTLink_USE_VP9)
+  VP9Decoder* decoder = new VP9Decoder();
+#elif defined(OpenIGTLink_USE_H264)
   H264Decoder* decoder = new H264Decoder();
 #endif
   receiver.SetDecoder(decoder);

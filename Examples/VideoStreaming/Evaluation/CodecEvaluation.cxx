@@ -43,18 +43,23 @@
 #include <cstring>
 #include <string>
 
-#if OpenIGTLink_BUILD_H264
+#if defined(OpenIGTLink_USE_H264)
 #include "H264Encoder.h"
 #include "H264Decoder.h"
 #endif
 
-#if OpenIGTLink_BUILD_VPX
-#include "VPXEncoder.h"
-#include "VPXDecoder.h"
+#if defined(OpenIGTLink_USE_VP9)
+#include "VP9Encoder.h"
+#include "VP9Decoder.h"
 #include "../video_reader.h"
 #include "./vpx_config.h"
 #include "vpx_dsp_rtcd.h"
 #include "vpx_dsp/ssim.h"
+#endif
+
+#if defined(OpenIGTLink_USE_X265)
+#include "H265Encoder.h"
+#include "H265Decoder.h"
 #endif
 
 int startEncodeTime = 0;
@@ -72,7 +77,7 @@ std::string testFileName("/Users/longquanchen/Documents/VideoStreaming/RoboticHy
 std::string evalFileName("EvalFile.txt");
 FILE* pEval = NULL;
 int startIndex = 0;
-int  inputFrameNum = 100;
+int  inputFrameNum = 2200;
 
 template <typename T>
 std::string ToString(T variable)
@@ -265,7 +270,7 @@ void TestWithVersion(int version, GenericEncoder* videoStreamEncoder, GenericDec
           videoMessageReceived->AllocatePack();
           memcpy(videoMessageReceived->GetPackBodyPointer(), messageBitStream+IGTL_HEADER_SIZE, 41186-IGTL_HEADER_SIZE);*/
           videoMessageReceived->Unpack();
-          bitstreamTotalLength += videoMessageReceived->GetBitStreamSize();
+          bitstreamTotalLength = videoMessageReceived->GetBitStreamSize();
           startDecodeTime = videoStreamDecoder->getCurrentTime();
           int iRet= videoStreamDecoder->DecodeVideoMSGIntoSingleFrame(videoMessageReceived.GetPointer(), pDecodedPic);
           if(iRet)
@@ -282,7 +287,22 @@ void TestWithVersion(int version, GenericEncoder* videoStreamEncoder, GenericDec
             {
               videoMessageReceived->SetMessageID(1); // Message ID is reset by the codec, so the comparison of ID is no longer valid, manually set to 1;
             }
-            ssim += local_vpx_ssim2(pSrcPic->data[0], pDecodedPic->data[0],pSrcPic->stride[0], pDecodedPic->stride[0],pSrcPic->picWidth,pSrcPic->picHeight);
+            ssim = local_vpx_ssim2(pSrcPic->data[0], pDecodedPic->data[0],pSrcPic->stride[0], pDecodedPic->stride[0],pSrcPic->picWidth,pSrcPic->picHeight);
+            float framePerSecondEncode = 1e6/((float)endEncodeTime - startEncodeTime);
+            float framePerSecondDecode = 1e6/((float)(endDecodeTime - startDecodeTime));
+            //std::cerr<<"SSIM Value: "<<ssim<<" Total Encoding Time: "<<totalEncodeTime/1e6<<std::endl;
+            compressionRate = (float)(Width*Height*3/2)/bitstreamTotalLength;
+            //std::cerr<<"Compression Ratio: "<<compressionRate<< std::endl;
+            std::string localline = std::string("");
+            localline.append(ToString(ssim));
+            localline.append(" ");
+            localline.append(ToString(compressionRate));
+            localline.append(" ");
+            localline.append(ToString(framePerSecondEncode));
+            localline.append(" ");
+            localline.append(ToString(framePerSecondDecode));
+            localline.append("\r\n");
+            fwrite(localline.c_str(), 1, localline.size(), pEval);
           }
         }
         igtl::Sleep(5);
@@ -304,22 +324,6 @@ void TestWithVersion(int version, GenericEncoder* videoStreamEncoder, GenericDec
   delete pSrcPic;
   pDecodedPic = NULL;
   pSrcPic = NULL;
-  float framePerSecondEncode = 1e6/((float)totalEncodeTime)*inputFrameNum;
-  float framePerSecondDecode = 1e6/((float)totalDecodeTime)*inputFrameNum;
-  ssim/=static_cast<float>(inputFrameNum);
-  std::cerr<<"SSIM Value: "<<ssim<<" Total Encoding Time: "<<totalEncodeTime/1e6<<std::endl;
-  compressionRate = (float)(Width*Height*totalFrame*3/2)/bitstreamTotalLength;
-  std::cerr<<"Compression Ratio: "<<compressionRate<< "  Total Frame Number: "<< totalFrame<< std::endl;
-  std::string localline = std::string("");
-  localline.append(ToString(ssim));
-  localline.append(" ");
-  localline.append(ToString(compressionRate));
-  localline.append(" ");
-  localline.append(ToString(framePerSecondEncode));
-  localline.append(" ");
-  localline.append(ToString(framePerSecondDecode));
-  localline.append("\r\n");
-  fwrite(localline.c_str(), 1, localline.size(), pEval);
   fclose(pEval);
 }
 
@@ -494,26 +498,29 @@ void CodecOptimizationEval()
 
 void VP9SpeedEvaluation()
 {
-  for (int speed = 2; speed<=8;speed=speed+2)
+  for (int speed = 0; speed<=0;speed=speed+2)
   {
-    for (int i = 0; i<22; i=i+2)
-    {
-#if OpenIGTLink_BUILD_VPX
-      startIndex = i*100;
+#if defined(OpenIGTLink_USE_VP9)
+      startIndex = 0;
       pEval = fopen (evalFileName.c_str(), "a");
       std::string title = "VP9CodecSpeedAndRateEvalWithSpeed-";
       title.append(ToString(speed)).append("\r\n");
       fwrite(title.c_str(),1, title.size(),pEval);
       fclose(pEval);
       std::map<std::string, std::string> values, times;
-      VPXEncoder* videoStreamEncoder = new VPXEncoder();
-      VPXDecoder* videoStreamDecoder = new VPXDecoder();
+      VP9Encoder* videoStreamEncoder = new VP9Encoder();
+      VP9Decoder* videoStreamDecoder = new VP9Decoder();
       videoStreamEncoder->SetPicWidthAndHeight(Width, Height);
       videoStreamEncoder->SetLosslessLink(false);
       videoStreamEncoder->SetRCMode(1); // 1 is VPX_CBR
       float percents[5] ={0.01, 0.02, 0.04, 0.06, 0.09};
       for (int j = 0; j<5; j=j+1) // The original frame bits per second is 256*256*20*8, the compression ratio is set from 0.5% to 8%
       {
+        title = "VP9CodecSpeedAndRateEvalWithTargetRate-";
+        title.append(ToString(j)).append("\r\n");
+        pEval = fopen (evalFileName.c_str(), "a");
+        fwrite(title.c_str(),1, title.size(),pEval);
+        fclose(pEval);
         videoStreamEncoder->SetRCTaregetBitRate((int)(Width*Height*8*20*percents[j]));
         videoStreamEncoder->InitializeEncoder();
         videoStreamEncoder->SetSpeed(speed);
@@ -529,10 +536,9 @@ void VP9SpeedEvaluation()
       {
         std::cerr<<it->first<<" "<<it->second<<" "<<it2->first<<" "<<it2->second<<std::endl;
       }
-      videoStreamDecoder->~VPXDecoder();
-      videoStreamEncoder->~VPXEncoder();
+      videoStreamDecoder->~VP9Decoder();
+      videoStreamEncoder->~VP9Encoder();
 #endif
-    }
   }
 }
 
@@ -582,10 +588,64 @@ void H264SpeedEvaluation()
 }
 
 
+
+void X265SpeedEvaluation()
+{
+  for (int speed = 0; speed<=9;speed=speed+9)
+  {
+#if defined(OpenIGTLink_USE_X265)
+      startIndex = 0;
+      pEval = fopen (evalFileName.c_str(), "a");
+      std::string title = "H265CodecSpeedAndRateEvalWithSpeed-";
+      title.append(ToString(speed)).append("\r\n");
+      fwrite(title.c_str(),1, title.size(),pEval);
+      fclose(pEval);
+      std::map<std::string, std::string> values, times;
+      H265Encoder* videoStreamEncoder = new H265Encoder();
+      H265Decoder* videoStreamDecoder = new H265Decoder();
+      videoStreamEncoder->SetPicWidthAndHeight(Width, Height);
+      videoStreamEncoder->SetLosslessLink(false);
+      videoStreamEncoder->SetRCMode(1); // 1 is VPX_CBR
+      videoStreamDecoder->~H265Decoder();
+      videoStreamEncoder->~H265Encoder();
+      int bitRateFactor = 7;
+      float percents[5] ={0.01, 0.02, 0.04, 0.06, 0.09};
+      for (int j = 0; j<5; j=j+1) // The original frame bits per second is 256*256*20*8, the compression ratio is set from 0.5% to 8%
+      {
+        title = "H265CodecSpeedAndRateEvalWithTargetRate-";
+        title.append(ToString(j)).append("\r\n");
+        pEval = fopen (evalFileName.c_str(), "a");
+        fwrite(title.c_str(),1, title.size(),pEval);
+        fclose(pEval);
+        videoStreamDecoder = new H265Decoder();
+        videoStreamEncoder = new H265Encoder();
+        videoStreamEncoder->SetRCTaregetBitRate((int)(Width*Height*8*20*percents[j])*bitRateFactor);
+        videoStreamEncoder->InitializeEncoder();
+        videoStreamEncoder->SetSpeed(speed);
+        TestWithVersion(IGTL_HEADER_VERSION_1, videoStreamEncoder, videoStreamDecoder, false);
+        videoStreamDecoder->~H265Decoder();
+        videoStreamEncoder->~H265Encoder();
+        float framePerSecondEncode = 1e6/((float)totalEncodeTime)*inputFrameNum;
+        float framePerSecondDecode = 1e6/((float)totalDecodeTime)*inputFrameNum;
+        std::cerr<<"Total encode and decode frequency for target bitrate="<<j<<": "<<framePerSecondEncode<<",  "<<framePerSecondDecode<<std::endl;
+        values.insert(std::pair<std::string, std::string>(ToString(ssim), ToString(compressionRate)));
+        times.insert(std::pair<std::string, std::string>(ToString(framePerSecondEncode), ToString(framePerSecondDecode)));
+      }
+      std::map<std::string, std::string>::const_iterator it2 = times.begin();
+      for( std::map<std::string, std::string>::const_iterator it = values.begin(); it != values.end(); ++it, ++it2)
+      {
+        std::cerr<<it->first<<" "<<it->second<<" "<<it2->first<<" "<<it2->second<<std::endl;
+      }
+#endif
+  }
+}
+
+
 int main(int argc, char **argv)
 {
   //H264SpeedEvaluation();
   VP9SpeedEvaluation();
+  X265SpeedEvaluation();
   //CodecOptimizationEval();
   return 0;
 }

@@ -46,14 +46,14 @@
 #include "igtlOSUtil.h"
 #include "igtlCodecCommonClasses.h"
 
-#if OpenIGTLink_BUILD_H264
+#if defined(OpenIGTLink_USE_H264)
 #include "H264Encoder.h"
 #include "H264Decoder.h"
 #endif
 
-#if OpenIGTLink_BUILD_VPX
-#include "VPXEncoder.h"
-#include "VPXDecoder.h"
+#if defined(OpenIGTLink_USE_VP9)
+#include "VP9Encoder.h"
+#include "VP9Decoder.h"
 #include "../video_reader.h"
 #include "./vpx_config.h"
 #include "vpx_dsp_rtcd.h"
