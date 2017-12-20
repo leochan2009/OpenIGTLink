@@ -46,6 +46,8 @@ int VP9Encoder::vpx_img_plane_height(const vpx_image_t *img, int plane) {
 VP9Encoder::VP9Encoder(char *configFile):GenericEncoder()
 {
   this->encoder = &vp9StaticEncoder[0];
+  this->picWidth = 256;
+  this->picHeight = 256;
   codec = new vpx_codec_ctx_t();
   encodedBuf = new vpx_fixed_buf_t();
   inputImage = new vpx_image_t();

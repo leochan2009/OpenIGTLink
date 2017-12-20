@@ -543,9 +543,10 @@ void H264SpeedEvaluation()
 
 void VP9SpeedEvaluation()
 {
-  evalFileName = "VP9CodecSpeedEval.txt";
   for (int speed = 0; speed<=8;speed=speed+2)
   {
+      evalFileName = "VP9CodecSpeedEvalSpeed-";
+      evalFileName.append(ToString(speed)).append(".txt");
 #if defined(OpenIGTLink_USE_VP9)
       startIndex = 0;
       pEval = fopen (evalFileName.c_str(), "a");
@@ -567,7 +568,7 @@ void VP9SpeedEvaluation()
         pEval = fopen (evalFileName.c_str(), "a");
         fwrite(title.c_str(),1, title.size(),pEval);
         title = "SSIM CompressionRatio EncodingSpeed DecodingSpeed";
-        title.append(ToString(j)).append("\r\n");
+        title.append("\r\n");
         fwrite(title.c_str(),1, title.size(),pEval);
         fclose(pEval);
         videoStreamEncoder->SetRCTaregetBitRate((int)(Width*Height*8*20*percents[j]));
@@ -594,11 +595,12 @@ void VP9SpeedEvaluation()
 
 void X265SpeedEvaluation()
 {
-  evalFileName = "X265CodecSpeedEval.txt";
   std::vector<int> speeds(5,0);
   speeds[0] = 0; speeds[1] = 3; speeds[2] = 5; speeds[3] = 7; speeds[4] = 9;
   for (int speedIndex = 0; speedIndex<speeds.size(); speedIndex++)
   {
+      evalFileName = "X265CodecSpeedEvalSpeed-";
+      evalFileName.append(ToString(speeds[speedIndex])).append(".txt");
 #if defined(OpenIGTLink_USE_X265)
       startIndex = 0;
       pEval = fopen (evalFileName.c_str(), "a");
@@ -623,7 +625,7 @@ void X265SpeedEvaluation()
         pEval = fopen (evalFileName.c_str(), "a");
         fwrite(title.c_str(),1, title.size(),pEval);
         title = "SSIM CompressionRatio EncodingSpeed DecodingSpeed";
-        title.append(ToString(j)).append("\r\n");
+        title.append("\r\n");
         fwrite(title.c_str(),1, title.size(),pEval);
         fclose(pEval);
         videoStreamDecoder = new H265Decoder();
@@ -657,6 +659,10 @@ void VP9LosslessEvaluation()
     startIndex = 0;
     pEval = fopen (evalFileName.c_str(), "a");
     std::string title = "VP9CodecLosslessEval";
+    title.append("\r\n");
+    fwrite(title.c_str(),1, title.size(),pEval);
+    title = "SSIM CompressionRatio EncodingSpeed DecodingSpeed";
+    title.append("\r\n");
     fwrite(title.c_str(),1, title.size(),pEval);
     fclose(pEval);
     std::map<std::string, std::string> values, times;
@@ -688,6 +694,10 @@ void X265LosslessEvaluation()
     startIndex = 0;
     pEval = fopen (evalFileName.c_str(), "a");
     std::string title = "X265CodecLosslessEval";
+    title.append("\r\n");
+    fwrite(title.c_str(),1, title.size(),pEval);
+    title = "SSIM CompressionRatio EncodingSpeed DecodingSpeed";
+    title.append("\r\n");
     fwrite(title.c_str(),1, title.size(),pEval);
     fclose(pEval);
     std::map<std::string, std::string> values, times;
@@ -696,9 +706,6 @@ void X265LosslessEvaluation()
     videoStreamEncoder->SetPicWidthAndHeight(Width, Height);
     videoStreamEncoder->SetLosslessLink(true);
     videoStreamEncoder->SetRCMode(1); // 1 is VPX_CBR
-    title = "SSIM CompressionRatio EncodingSpeed DecodingSpeed";
-    fwrite(title.c_str(),1, title.size(),pEval);
-    fclose(pEval);
     TestWithVersion(IGTL_HEADER_VERSION_1, videoStreamEncoder, videoStreamDecoder, false);
     float framePerSecondEncode = 1e6/((float)totalEncodeTime)*inputFrameNum;
     float framePerSecondDecode = 1e6/((float)totalDecodeTime)*inputFrameNum;
