@@ -39,4 +39,5 @@ if(1 EQUAL 1)
 
   add_executable( X265EncodeTest Evaluation/X265EncodeTest.cxx)
   target_link_libraries(X265EncodeTest OpenIGTLink)
+
 endif()

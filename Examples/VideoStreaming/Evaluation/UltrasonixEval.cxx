@@ -73,11 +73,11 @@ float compressionRate = 0.0;
 
 int Width = 446;
 int Height = 460;
-std::string testFileDir("/Users/longquanchen/Documents/VideoStreaming/PaperCodecOptimization/UltrasonixImages");
+std::string testFileDir("/Users/longquanchen/Documents/VideoStreaming/PaperCodecOptimization/UltrasonixImages/WithMotion");
 std::string evalFileName("EvalFile.txt");
 FILE* pEval = NULL;
-int startIndex = 0;
-int  inputFrameNum = 4337;
+int startIndex = 1236;
+int  inputFrameNum = 4452;
 int totolFrameNumber = 0;
 
 template <typename T>
@@ -510,7 +510,7 @@ void VP9SpeedEvaluation()
       videoStreamEncoder->SetLosslessLink(false);
       videoStreamEncoder->SetRCMode(1); // 1 is VPX_CBR
       float percents[5] ={0.01, 0.02, 0.04, 0.06, 0.09};
-      startIndex = 2351;
+      startIndex = 1236;
       pEval = fopen (evalFileName.c_str(), "a");
       std::string title = "VP9CodecSpeedAndRateEvalWithSpeed-";
       title.append(ToString(speed)).append("\r\n");
@@ -560,7 +560,7 @@ void H265SpeedEvaluation()
     float percents[5] ={0.01, 0.02, 0.04, 0.06, 0.09};
     std::map<std::string, std::string> values, times;
     int BitRateFactor = 7;
-    startIndex = 2351;
+    startIndex = 1236;
     pEval = fopen (evalFileName.c_str(), "a");
     std::string title = "H265CodecSpeedAndRateEvalWithSpeed-";
     title.append(ToString(speeds[speedIndex])).append("\r\n");
@@ -607,7 +607,7 @@ void VP9LosslessEvaluation()
 {
     evalFileName = "VP9CodecLosslessUltraSonixEval.txt";
 #if defined(OpenIGTLink_USE_VP9)
-    startIndex = 2351;
+    startIndex = 1236;
     pEval = fopen (evalFileName.c_str(), "a");
     std::string title = "VP9CodecLosslessEval";
     title.append("\r\n");
@@ -642,7 +642,7 @@ void X265LosslessEvaluation()
 {
 #if defined(OpenIGTLink_USE_X265)
     evalFileName = "X265CodecLosslessUltraSonixEval.txt";
-    startIndex = 2351;
+    startIndex = 1236;
     pEval = fopen (evalFileName.c_str(), "a");
     std::string title = "X265CodecLosslessEval";
     title.append("\r\n");
