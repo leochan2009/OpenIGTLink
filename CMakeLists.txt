@@ -44,6 +44,10 @@ OPTION(OpenIGTLink_USE_WEBSOCKET "Build the Websocket." OFF)
 OPTION(USE_SWIG_PYTHON "Use SWIG for Python wrapping." OFF)
 
 #-----------------------------------------------------------------------------
+# Configure SWIG for C#
+OPTION(USE_SWIG_CSHARP "Use SWIG for C# wrapping." OFF)
+
+#-----------------------------------------------------------------------------
 # OpenIGTLink build configuration options.
 OPTION(BUILD_SHARED_LIBS "Build OpenIGTLink with shared libraries." OFF)
 SET(OpenIGTLink_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
@@ -330,5 +334,30 @@ IF(${OpenIGTLink_PROTOCOL_VERSION} GREATER "2" AND USE_SWIG_PYTHON)
         SWIG_ADD_LIBRARY(OpenIGTLinkPython LANGUAGE python TYPE MODULE SOURCES OpenIGTLinkPython.i)
     ENDIF()
     SWIG_LINK_LIBRARIES(OpenIGTLinkPython ${PYTHON_LIBRARIES} ${LINK_LIBS} OpenIGTLink)
+ENDIF()
+
+#-----------------------------------------------------------------------------
+# SWIG for Python
+IF(${OpenIGTLink_PROTOCOL_VERSION} GREATER "2" AND USE_SWIG_CSHARP)
+    FIND_PACKAGE(SWIG REQUIRED)
+    INCLUDE(${SWIG_USE_FILE})
+    INCLUDE_DIRECTORIES(${OpenIGTLink_INCLUDE_DIRS})
+    set(CMAKE SWIG OUTDIR {root})
+    SET(CMAKE_SWIG_FLAGS "")
+    CONFIGURE_FILE(${OpenIGTLink_SOURCE_DIR}/igtlConfigure.h.in
+      ${OpenIGTLink_SOURCE_DIR}/Source/igtlConfigure.h)
+
+    SET_SOURCE_FILES_PROPERTIES(OpenIGTLinkCSharp.i PROPERTIES CPLUSPLUS ON)
+    SET_SOURCE_FILES_PROPERTIES(OpenIGTLinkCSharp.i PROPERTIES SWIG_FLAGS "-cpperraswarn")
+    IF(NOT OpenIGTLink_BUILD_SHARED_LIBS)
+    Message(FATAL_ERROR, "When working with multiple SWIG modules, you should take care not to use static libraries. For example,
+        if you have a static library libfoo.a and you link a collection of SWIG modules with that library,
+        each module will get its own private copy of the library code inserted into it.
+        This is very often NOT what you want and it can lead to unexpected or bizarre program behavior.
+        When working with dynamically loadable modules, you should try to work exclusively with shared libraries.")
+    ELSE()
+        SWIG_ADD_LIBRARY(OpenIGTLinkCSharp LANGUAGE csharp TYPE MODULE SOURCES OpenIGTLinkCSharp.i)
+    ENDIF()
+    SWIG_LINK_LIBRARIES(OpenIGTLinkCSharp ${PYTHON_LIBRARIES} ${LINK_LIBS} OpenIGTLink)
 ENDIF()
 
