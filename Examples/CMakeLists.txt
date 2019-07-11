@@ -26,6 +26,7 @@ if (${OpenIGTLink_PROTOCOL_VERSION} GREATER 1)
     Trajectory
     SessionManager
     TrackingDataUDPTransfer
+    Broadcast
     #SampleUDPProgam
     )
 endif (${OpenIGTLink_PROTOCOL_VERSION} GREATER 1)

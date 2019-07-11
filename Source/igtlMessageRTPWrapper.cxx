@@ -417,6 +417,7 @@ namespace igtl {
     this->PacketSendTimeStampList.clear();
     this->PacketBeforeSendTimeStampList.clear();
     this->PacketTotalLengthList.clear();
+    int numByteSent = 0;
     do
       {
       status = this->WrapMessage(leftmessageContent, leftMsgLen);
@@ -425,7 +426,7 @@ namespace igtl {
         this->wrapperTimer->GetTime();
         this->PacketBeforeSendTimeStampList.push_back(this->wrapperTimer->GetTimeStampInNanoseconds());
         this->glock->Lock();
-        int numByteSent = socket->WriteSocket(this->GetPackPointer(), this->GetPackedMSGLocation());
+        numByteSent = socket->WriteSocket(this->GetPackPointer(), this->GetPackedMSGLocation());
         this->glock->Unlock();
         this->fragmentNumberList.push_back(this->fragmentNumber);
         this->wrapperTimer->GetTime();
@@ -436,7 +437,7 @@ namespace igtl {
       leftmessageContent = messageContentPointer + this->GetCurMSGLocation();
       leftMsgLen = MSGContentLength - this->GetCurMSGLocation();
       }while(leftMsgLen>0 && status!=igtl::MessageRTPWrapper::PacketReady); // to do when bodyMsgLen
-    return 1;
+    return numByteSent;
   }
   
   void MessageRTPWrapper::SleepInNanoSecond(int nanoSecond)
