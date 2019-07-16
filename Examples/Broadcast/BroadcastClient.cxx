@@ -20,7 +20,7 @@
 #include "igtlStringMessage.h"
 #include "igtlUDPClientSocket.h"
 #include "igtlMessageRTPWrapper.h"
-
+#include "igtlClientSocket.h"
 
 int ReceiveIpAddress(igtl::StringMessage::Pointer& message);
 
@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
 
   igtl::UDPClientSocket::Pointer socket;
   socket = igtl::UDPClientSocket::New();
-  int r = socket->JoinNetwork("10.32.23.255", port);
+  int r = socket->JoinNetwork("192.168.0.255", port);
 
   if (r < 0)
     {
@@ -58,9 +58,28 @@ int main(int argc, char* argv[])
   igtl::MessageRTPWrapper::Pointer rtpWrapper = igtl::MessageRTPWrapper::New();
   igtl::SimpleMutexLock* glock = igtl::SimpleMutexLock::New();
   int loop = 0;
-  for (loop = 0; loop<100; loop++)
+  const char data[100] = {'s'};
+  char * tcpSendData= new char[100];
+  tcpSendData[0] = data[0];
+  for (loop = 0; loop<10000; loop++)
   {
     int totMsgLen = socket->ReadSocket(bufferPKT, RTP_PAYLOAD_LENGTH+RTP_HEADER_LENGTH);
+    std::string output((char*)bufferPKT, totMsgLen);
+    if(totMsgLen>0)
+    {
+        std::cerr<<output.c_str()<<std::endl;
+        igtl::ClientSocket::Pointer socket = igtl::ClientSocket::New();
+        int r = socket->ConnectToServer("192.168.0.101", 18944);
+        if(r>=0)
+        {
+            for (;;) {
+                socket->Send(tcpSendData,100);
+                igtl::Sleep(500);
+            }
+        }
+
+    }
+    continue;
     rtpWrapper->PushDataIntoPacketBuffer(bufferPKT, totMsgLen);
     rtpWrapper->UnWrapPacketWithTypeAndName("STRING", "IpAddress");
     glock->Lock();

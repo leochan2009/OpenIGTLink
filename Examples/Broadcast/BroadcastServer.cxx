@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
   igtl::UDPServerSocket::Pointer serverSocket;
   serverSocket = igtl::UDPServerSocket::New();
   int r = serverSocket->CreateUDPServer();
-  serverSocket->AddClient("10.32.23.255", port, 1);
+  serverSocket->AddClient("192.168.0.255", port, 1);
 
   if (r < 0)
     {
